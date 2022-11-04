@@ -25,5 +25,6 @@
 X. Extra
 	- download and install go (Golang)
 		- I installed go itself as well as the language support for VSCode (language support can be installed from within vscode as an extension)
+	- DO NOT UPLOAD THE BIG .XML .OSM .OSM.PBF OR SIMILAR FILES TO THE GITHUB REPOSITORY (preferably keep them in a seperate folder/directory, outside of the repository)
 	
 		

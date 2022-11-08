@@ -9,5 +9,6 @@ func readFile(path string) {
 }
 
 func main() {
-	readFile("abc.osm")
+	PBFpath := "../../data/antarctica.osm.pbf"
+	readFile(PBFpath)
 }

@@ -10,7 +10,15 @@ import (
 	"github.com/qedus/osmpbf"
 )
 
-func ReadPBF(path string) [][][]float64 {
+func ReadPBF(path string) basic {
+	rawCoastlines := extractCoastlinesFromPBF(path)
+	return rawCoastlines
+}
+
+func extractCoastlinesFromPBF(path string) basic {
+	nodes := make(map[int64]node)
+	ways := make(map[int64]way)
+
 	f, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
@@ -38,9 +46,15 @@ func ReadPBF(path string) [][][]float64 {
 			switch v := v.(type) {
 			case *osmpbf.Node:
 				// Process Node v.
+				nodes[v.ID] = node{lat: v.Lat, lon: v.Lon}
 				nc++
 			case *osmpbf.Way:
 				// Process Way v.
+				if v.Tags["natural"] == "coastline" {
+					fmt.Println("add way with tag natural = " + v.Tags["natural"])
+					fmt.Printf("and number of nodes in way: %d\n\n", len(v.NodeIDs))
+					ways[v.ID] = way{nodes: v.NodeIDs}
+				}
 				wc++
 			case *osmpbf.Relation:
 				// Process Relation v.
@@ -52,9 +66,5 @@ func ReadPBF(path string) [][][]float64 {
 	}
 
 	fmt.Printf("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc)
-	return nil
-}
-
-func extractCoastlinesFromPBF(path string) [][][]float64 {
-	return nil
+	return basic{nodes: nodes, ways: ways}
 }

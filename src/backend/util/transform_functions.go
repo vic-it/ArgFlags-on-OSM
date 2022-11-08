@@ -10,12 +10,29 @@ import (
 	"github.com/qedus/osmpbf"
 )
 
-func ReadPBF(path string) basic {
-	rawCoastlines := extractCoastlinesFromPBF(path)
-	return rawCoastlines
+func BASICtoFMI() {
+
 }
 
-func extractCoastlinesFromPBF(path string) basic {
+func FMItoBASIC() {
+
+}
+
+func BASICtoGEOJSON() {
+
+}
+
+func BASICtoGRAPH() {
+
+}
+
+func GRAPHtoBASIC() {
+
+}
+
+// this function takes in a path (as string) to a PBF file, reads it, extracts all coastlines and transforms them into the basic format
+// this code is mostly taken from https://pkg.go.dev/github.com/qedus/osmpbf#section-readme
+func PBFtoBASIC(path string) basic {
 	nodes := make(map[int64]node)
 	ways := make(map[int64]way)
 
@@ -51,8 +68,6 @@ func extractCoastlinesFromPBF(path string) basic {
 			case *osmpbf.Way:
 				// Process Way v.
 				if v.Tags["natural"] == "coastline" {
-					fmt.Println("add way with tag natural = " + v.Tags["natural"])
-					fmt.Printf("and number of nodes in way: %d\n\n", len(v.NodeIDs))
 					ways[v.ID] = way{nodes: v.NodeIDs}
 				}
 				wc++
@@ -65,6 +80,6 @@ func extractCoastlinesFromPBF(path string) basic {
 		}
 	}
 
-	fmt.Printf("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc)
+	fmt.Printf("Read: %d Nodes and %d Ways\n", nc, wc)
 	return basic{nodes: nodes, ways: ways}
 }

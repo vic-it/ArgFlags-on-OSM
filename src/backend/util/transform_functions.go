@@ -18,8 +18,8 @@ func FMItoBASIC() {
 
 }
 
-func BASICtoGEOJSON() {
-
+func BASICtoGEOJSON(basicData basic) {
+	//save basic data in geojson format -> as file (.json)
 }
 
 func BASICtoGRAPH() {
@@ -33,8 +33,8 @@ func GRAPHtoBASIC() {
 // this function takes in a path (as string) to a PBF file, reads it, extracts all coastlines and transforms them into the basic format
 // this code is mostly taken from https://pkg.go.dev/github.com/qedus/osmpbf#section-readme
 func PBFtoBASIC(path string) basic {
-	nodes := make(map[int64]node)
-	ways := make(map[int64]way)
+	nodes := make(map[int64]node) //(key,value) -> (ID of node, {latitude, longitude})
+	ways := make(map[int64]way)   // -> (ID of way, [list of node IDs in way])
 
 	f, err := os.Open(path)
 	if err != nil {

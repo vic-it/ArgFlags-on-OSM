@@ -62,24 +62,28 @@ func PBFtoBASIC(path string) basic {
 		} else {
 			switch v := v.(type) {
 			case *osmpbf.Node:
-				// Process Node v.
+				// save all nodes
 				nodes[v.ID] = node{lat: v.Lat, lon: v.Lon}
 				nc++
 			case *osmpbf.Way:
-				// Process Way v.
+				// only save ways with the coastline tag
 				if v.Tags["natural"] == "coastline" {
-					ways[v.ID] = way{nodes: v.NodeIDs}
+					ways[v.NodeIDs[0]] = way{nodes: v.NodeIDs, lastNodeID: v.NodeIDs[len(v.NodeIDs)-1]}
+					wc++
 				}
-				wc++
 			case *osmpbf.Relation:
-				// Process Relation v.
+				// dont save any relations for now
 				rc++
 			default:
 				log.Fatalf("unknown type %T\n", v)
 			}
 		}
 	}
-
-	fmt.Printf("Read: %d Nodes and %d Ways\n", nc, wc)
+	fmt.Printf("Read: %d Nodes and %d Ways\n", len(nodes), len(ways))
+	for {
+		if (MergeWays(basic{nodes: nodes, ways: ways}) == 0) {
+			break
+		}
+	}
 	return basic{nodes: nodes, ways: ways}
 }

@@ -2,6 +2,13 @@ package util
 
 import "fmt"
 
+//checks if a point, given coordinates, is on land (false) or in water (true)
+func IsPointInWater(g graph, p point) bool {
+	//edges := g.edges
+	//do point in polygon test for all way-polygons
+	return false
+}
+
 //takes a whole basic format map as input, checks if one way starts where another ends -> merges them
 func MergeWays(inputMap basic) int {
 	mergeCounter := 0

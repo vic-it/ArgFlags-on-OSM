@@ -23,7 +23,20 @@ type way struct {
 }
 
 type graph struct {
-	nodes []node
-	ways  []way
+	edges  []edge
+	points []point
 	//more stuff here
+}
+
+// like nodes, except on a globe and in actualy position/distance instead of degrees
+type point struct {
+	x float64
+	y float64
+}
+
+// one edge of a multi-edge polygon (= way)
+type edge struct {
+	start  float64
+	end    float64
+	length float64
 }

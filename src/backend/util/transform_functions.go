@@ -60,6 +60,7 @@ func PBFtoBASIC(path string) basic {
 		} else if err != nil {
 			log.Fatal(err)
 		} else {
+			// Here you can change what happens to nodes/ways when read
 			switch v := v.(type) {
 			case *osmpbf.Node:
 				// save all nodes
@@ -79,11 +80,20 @@ func PBFtoBASIC(path string) basic {
 			}
 		}
 	}
+	//merges touching ways
 	fmt.Printf("Read: %d Nodes and %d Ways\n", len(nodes), len(ways))
 	for {
 		if (MergeWays(basic{nodes: nodes, ways: ways}) == 0) {
 			break
 		}
 	}
+	//checks if all ways left are polygons (can be deleted)
+	ctr := 0
+	for _, way := range ways {
+		if way.nodes[0] == way.nodes[len(way.nodes)-1] {
+			ctr++
+		}
+	}
+	fmt.Printf("Number of ways that are closed polygons: %d\n", ctr)
 	return basic{nodes: nodes, ways: ways}
 }

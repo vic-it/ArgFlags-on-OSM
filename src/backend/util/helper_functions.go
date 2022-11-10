@@ -6,6 +6,8 @@ import "fmt"
 func IsPointInWater(g graph, p point) bool {
 	//edges := g.edges
 	//do point in polygon test for all way-polygons
+	//idea: take one point that is definitely in water (north pole maybe?) -> check if line from point to northpole goes through even or uneven number of edges (coastlines)
+	// even -> point is in water, uneven -> point is on land
 	return false
 }
 

@@ -11,6 +11,8 @@ func fetchWorld(path string) {
 }
 
 func main() {
+	//"../../data/antarctica.osm.pbf"
+	//PBFpath := "../../data/central-america.osm.pbf"
 	PBFpath := "../../data/antarctica.osm.pbf"
 	fetchWorld(PBFpath)
 }

@@ -3,12 +3,23 @@ package util
 import "fmt"
 
 //checks if a point, given coordinates, is on land (false) or in water (true)
-func IsPointInWater(g graph, p point) bool {
-	//edges := g.edges
-	//do point in polygon test for all way-polygons
-	//idea: take one point that is definitely in water (north pole maybe?) -> check if line from point to northpole goes through even or uneven number of edges (coastlines)
-	// even -> point is in water, uneven -> point is on land
+func IsPointInWater(p point) bool {
+	//input should be: numberOfEdgesInTheWayToNorthpole, []edge
+	//SQL command for relevant edges
+	//number, questionableEdges := GetTestSQLResult(p)
+	// for every edge e call isEdgeInTheWay(p, e)
+	// if true -> number += 1
+
 	return false
+}
+
+func isEdgeInTheWay(p point, e edge) bool {
+	//check if edge is in the way
+	//point : {lat, lon}
+	//p.lat
+	//edge : {point1, point2}
+	//edge.point.lat
+	return true
 }
 
 //takes a whole basic format map as input, checks if one way starts where another ends -> merges them

@@ -6,7 +6,7 @@ import "fmt"
 func IsPointInWater(p point) bool {
 	//input should be: numberOfEdgesInTheWayToNorthpole, []edge
 	//SQL command for relevant edges
-	//number, questionableEdges := GetTestSQLResult(p)
+	// numberOfEdgesGaruanteedInTheWay, questionableEdges := GetTestSQLResult(p)
 	// for every edge e call isEdgeInTheWay(p, e)
 	// if true -> number += 1
 

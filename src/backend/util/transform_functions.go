@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime"
 
+	geojson "github.com/paulmach/go.geojson"
 	"github.com/qedus/osmpbf"
 )
 
@@ -18,8 +19,25 @@ func FMItoBASIC() {
 
 }
 
-func BASICtoGEOJSON(basicData basic) {
+func BASICtoGEOJSONFile(basicData basic) {
 	//save basic data in geojson format -> as file (.json)
+	var polygonList [][][]float64
+	for _, way := range basicData.ways {
+		var polygon [][]float64
+		for _, node := range way.nodes {
+			var nodeAsArray []float64
+			nodeAsArray = append(nodeAsArray, basicData.nodes[node].lon)
+			nodeAsArray = append(nodeAsArray, basicData.nodes[node].lat)
+			polygon = append(polygon, nodeAsArray)
+		}
+		polygonList = append(polygonList, polygon)
+	}
+	g := geojson.NewMultiPolygonGeometry(polygonList)
+	rawJSON, err := g.MarshalJSON()
+	err = os.WriteFile("../../data/geojson.json", rawJSON, 0644)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func BASICtoGRAPH() {

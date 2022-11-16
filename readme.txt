@@ -6,7 +6,7 @@
 	- current go program extracts them automatically (main.go -> backend/util/coastlines.go)
 
 3. map OSM XML file to GeoJSON file
-	- TODO: implement "BasictoGEOJson" function in transform.go (backend/util/transform.go)
+	- current go program automatically transforms and writes the extracted coastlines into a geojson format (backend/util/transform.go)
 
 4. TODO...
 
@@ -26,4 +26,10 @@ X. Extra
 					-...
 	- start program with "go run main.go"
 	- make sure the filepath declared in main.go points to your antarctica.osm.pbf file
+
+
+
+SQL SERVER:
+	- download "SQL Server on premises" from https://www.microsoft.com/en-us/sql-server/sql-server-downloads?SilentAuth=1&wa=wsignin1.0
+	- install basic/standard version (a few gigabyte)
 		

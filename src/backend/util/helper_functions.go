@@ -1,8 +1,10 @@
 package util
 
-import "fmt"
+import (
+	"fmt"
+)
 
-//checks if a point, given coordinates, is on land (false) or in water (true)
+// checks if a point, given coordinates, is on land (false) or in water (true)
 func IsPointInWater(p point) bool {
 	//input should be: numberOfEdgesInTheWayToNorthpole, []edge
 	//SQL command for relevant edges
@@ -22,7 +24,7 @@ func isEdgeInTheWay(p point, e edge) bool {
 	return true
 }
 
-//takes a whole basic format map as input, checks if one way starts where another ends -> merges them
+// takes a whole basic format map as input, checks if one way starts where another ends -> merges them
 func MergeWays(inputMap basic) int {
 	mergeCounter := 0
 	ways := inputMap.ways
@@ -46,4 +48,9 @@ func mergeTwoWays(startWay way, endWay way) way {
 	newNodes := append(startWay.nodes, endWay.nodes[1:]...)
 	newWay := way{nodes: newNodes, lastNodeID: endWay.lastNodeID}
 	return newWay
+}
+
+func PrintProgress(current int, max int, unit string) {
+	progress := float64(current) / float64(max)
+	fmt.Printf("Generating geojson file. Progress: %2.2f%s%d%s%d %s\n\r", 100*progress, "%... - ", current, " out of ", max, unit)
 }

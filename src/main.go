@@ -13,6 +13,7 @@ func fetchWorld(path string) {
 func main() {
 	//"../../data/antarctica.osm.pbf"
 	//"../../data/central-america.osm.pbf"
-	PBFpath := "../../data/antarctica.osm.pbf"
+	// "../../data/global.sec" THIS IS THE BIG ONE FROM ILIAS (renamed, takes up ~11GB of RAM!)
+	PBFpath := "../../data/central-america.osm.pbf"
 	fetchWorld(PBFpath)
 }

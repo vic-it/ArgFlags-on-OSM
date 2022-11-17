@@ -22,22 +22,47 @@ func FMItoBASIC() {
 func BASICtoGEOJSONFile(basicData basic) {
 	//save basic data in geojson format -> as file (.json)
 	var polygonList [][][]float64
-	for _, way := range basicData.ways {
+	wayCtr := 0
+	nodeCtr := 0
+	for _, wayx := range basicData.ways {
+		//increment way counter
+		wayCtr++
+		//store this way as polygon
 		var polygon [][]float64
-		for _, node := range way.nodes {
+		for _, nodex := range wayx.nodes {
+			//increment node counter
+			nodeCtr++
 			var nodeAsArray []float64
-			nodeAsArray = append(nodeAsArray, basicData.nodes[node].lon)
-			nodeAsArray = append(nodeAsArray, basicData.nodes[node].lat)
+			nodeAsArray = append(nodeAsArray, basicData.nodes[nodex].lon)
+			nodeAsArray = append(nodeAsArray, basicData.nodes[nodex].lat)
+			// prepare node s.t. garbage collection will clean it up
+			basicData.nodes[nodex] = node{}
+
 			polygon = append(polygon, nodeAsArray)
+			// force garbage collection -> else memory overruns
+			if nodeCtr%10000 == 0 {
+				runtime.GC()
+			}
+
 		}
 		polygonList = append(polygonList, polygon)
+		//prepare way s.t. garbage collection will clean it
+		wayx = way{}
+		// print geojson progress aswell as force garbage collection
+		if wayCtr%10000 == 0 {
+			PrintProgress(wayCtr, len(basicData.ways), "ways")
+			runtime.GC()
+		}
 	}
 	g := geojson.NewMultiPolygonGeometry(polygonList)
-	rawJSON, err := g.MarshalJSON()
-	err = os.WriteFile("../../data/geojson.json", rawJSON, 0644)
+	rawJSON, _ := g.MarshalJSON()
+	err := os.WriteFile("../../data/geojson.json", rawJSON, 0644)
+	println("geojson file written to: '../../data/geojson.json'")
+	fmt.Printf("%d out of %d nodes were processed", nodeCtr, len(basicData.nodes))
 	if err != nil {
 		panic(err)
 	}
+	rawJSON = nil
 }
 
 func BASICtoGRAPH() {

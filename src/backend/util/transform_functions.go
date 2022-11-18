@@ -65,6 +65,18 @@ func BASICtoGEOJSONFile(basicData basic) {
 	rawJSON = nil
 }
 
+func PointsToGEOJSONFile(points [][]float64) {
+
+	fc := geojson.NewMultiPointFeature(points...)
+	fc.SetProperty("x", "y")
+	rawJSON, _ := fc.MarshalJSON()
+	err := os.WriteFile("../../data/pointgrid.json", rawJSON, 0644)
+	if err != nil {
+		panic(err)
+	}
+	rawJSON = nil
+}
+
 func BASICtoGRAPH() {
 
 }

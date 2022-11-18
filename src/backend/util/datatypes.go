@@ -23,8 +23,9 @@ type way struct {
 }
 
 type graph struct {
-	edges  []edge
-	points []point
+	edges     [][]int64
+	points    [][]float64
+	distances []int
 	//more stuff here
 }
 

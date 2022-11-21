@@ -17,8 +17,11 @@ func PointToNode(p point) node {
 }
 
 // math from here https://www.cmu.edu/biolphys/deserno/pdf/sphere_equi.pdf
-func GenerateGraphPoints(numberOfNodes int) [][]float64 {
+func GenerateGraphPoints(numberOfNodes int) ([][]float64, [][]int) {
+	// simple list of all points
 	var points [][]float64
+	//list but as 2d-ish grid for edge creation -> with index of points in "points[]"
+	var pointMatrix [][]int
 	pi := math.Pi
 	//count of nodes
 	count := 0
@@ -27,26 +30,44 @@ func GenerateGraphPoints(numberOfNodes int) [][]float64 {
 	Mv := math.Round(pi / d)
 	dv := pi / Mv
 	dp := a / dv
+	// iterate over lats
 	for m := 0.0; m < Mv; m++ {
+		var latList []int
 		v := pi * (m + 0.5) / Mv
 		Mp := math.Round(2.0 * pi * math.Sin(v) / dp)
+		// iterate over longs
 		for n := 0.0; n < Mp; n++ {
 			//generate point?
 			p := 2.0 * pi * n / Mp
 			var point []float64
+			// p -> lon
+			// v -> lat
 			lon, lat := radToDeg(v, p)
 			point = append(point, lon)
 			point = append(point, lat)
 			points = append(points, point)
+			latList = append(latList, len(points)-1)
 			count++
 		}
+		pointMatrix = append(pointMatrix, latList)
 	}
 	fmt.Printf("%d points created\n", count)
-	return points
+	return points, pointMatrix
 }
 
 func radToDeg(theta float64, phi float64) (float64, float64) {
 	lon := (360.0 * phi / (math.Pi * 2.0)) - 180.0
 	lat := (theta * 180.0 / math.Pi) - 90.0
 	return lon, lat
+}
+
+func GenerateEdges(points [][]float64, indexMatrix [][]int) {
+	var edgeSource []int
+	var edgeDest []int
+	for y := 1; y < len(indexMatrix)-1; y++ {
+		latList := indexMatrix[y]
+		for x := 0; x < len(latList); x++ {
+
+		}
+	}
 }

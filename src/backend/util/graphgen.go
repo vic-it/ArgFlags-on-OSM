@@ -61,13 +61,39 @@ func radToDeg(theta float64, phi float64) (float64, float64) {
 	return lon, lat
 }
 
-func GenerateEdges(points [][]float64, indexMatrix [][]int) {
+func GenerateEdges(points [][]float64, indexMatrix [][]int) ([][]float64, []int, []int) {
 	var edgeSource []int
 	var edgeDest []int
-	for y := 1; y < len(indexMatrix)-1; y++ {
+	for y := 0; y < len(indexMatrix); y++ {
 		latList := indexMatrix[y]
 		for x := 0; x < len(latList); x++ {
-
+			//add left edge
+			edgeSource = append(edgeSource, indexMatrix[y][x])
+			if x == 0 {
+				edgeDest = append(edgeDest, indexMatrix[y][len(latList)-1])
+			} else {
+				edgeDest = append(edgeDest, indexMatrix[y][x-1])
+			}
+			//add right edge
+			edgeSource = append(edgeSource, indexMatrix[y][x])
+			if x == len(latList)-1 {
+				edgeDest = append(edgeDest, indexMatrix[y][0])
+			} else {
+				edgeDest = append(edgeDest, indexMatrix[y][x+1])
+			}
+			//add below edge
+			if y != 0 {
+				position := int(math.Round(float64(x * len(indexMatrix[y-1]) / len(indexMatrix[y]))))
+				edgeSource = append(edgeSource, indexMatrix[y][x])
+				edgeDest = append(edgeDest, indexMatrix[y-1][position])
+			}
+			//add above edge
+			if y != len(indexMatrix)-1 {
+				position := int(math.Round(float64(x * len(indexMatrix[y+1]) / len(indexMatrix[y]))))
+				edgeSource = append(edgeSource, indexMatrix[y][x])
+				edgeDest = append(edgeDest, indexMatrix[y+1][position])
+			}
 		}
 	}
+	return points, edgeSource, edgeDest
 }

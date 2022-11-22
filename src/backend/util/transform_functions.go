@@ -152,3 +152,19 @@ func PBFtoBASIC(path string) basic {
 	fmt.Printf("Number of ways that are closed polygons: %d\n", ctr)
 	return basic{nodes: nodes, ways: ways}
 }
+
+func PrintEdgesToGEOJSON(points [][]float64, src []int, dest []int) {
+	var lineList [][][]float64
+	for i := 0; i < len(src); i++ {
+		line := [][]float64{points[src[i]], points[dest[i]]}
+		lineList = append(lineList, line)
+	}
+	fc := geojson.NewMultiLineStringFeature(lineList...)
+	fc.SetProperty("x", "y")
+	rawJSON, _ := fc.MarshalJSON()
+	err := os.WriteFile("../../data/edgegrid.json", rawJSON, 0644)
+	if err != nil {
+		panic(err)
+	}
+	rawJSON = nil
+}

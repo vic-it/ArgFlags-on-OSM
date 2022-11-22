@@ -35,6 +35,12 @@ type point struct {
 	y float64
 }
 
+type point_threeD struct {
+	x float64
+	y float64
+	z float64
+}
+
 // one edge of a multi-edge polygon (= way)
 type edge struct {
 	start  float64

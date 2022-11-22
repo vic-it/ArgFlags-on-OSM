@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"math"
 )
 
 // checks if a point, given coordinates, is on land (false) or in water (true)
@@ -13,6 +14,55 @@ func IsPointInWater(p point) bool {
 	// if true -> number += 1
 
 	return false
+}
+
+func dist(src []float64, dest []float64) float64 {
+	const PI float64 = math.Pi
+
+	srcLat := src[1]
+	srcLon := src[0]
+	destLat := src[1]
+	destLon := src[0]
+
+	radlat1 := float64(PI * srcLat / 180)
+	radlat2 := float64(PI * destLat / 180)
+
+	theta := float64(srcLon - destLon)
+	radtheta := float64(PI * theta / 180)
+
+	dist := math.Sin(radlat1)*math.Sin(radlat2) + math.Cos(radlat1)*math.Cos(radlat2)*math.Cos(radtheta)
+
+	if dist > 1 {
+		dist = 1
+	}
+
+	dist = math.Acos(dist)
+	dist = dist * 180 / PI
+	dist = dist * 60 * 1.1515
+
+	// K - 1.609344
+	// N -  0.8684
+
+	dist = dist * 0.8684
+	return dist
+}
+
+func threeD_coord(lon float64, lat float64) point_threeD {
+	rad := float64(6378137.0)
+	// Radius of the Earth (in meters)
+	cosLat := math.Cos(lat)
+	sinLat := math.Sin(lat)
+	cosLon := math.Cos(lon)
+	sinLon := math.Sin(lon)
+
+	x := rad * cosLon * sinLat
+	y := rad * sinLon * sinLat
+	z := rad * cosLat
+
+	anspoint := point_threeD{x, y, z}
+
+	return anspoint
+
 }
 
 func isEdgeInTheWay(p point, e edge) bool {

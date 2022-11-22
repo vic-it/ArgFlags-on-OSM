@@ -95,5 +95,16 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int) ([][]float64, []int,
 			}
 		}
 	}
+	fmt.Printf("%d edges generated", len(edgeDest))
 	return points, edgeSource, edgeDest
+}
+
+func CalcEdgeDistances(points [][]float64, src []int, dest []int) []float64 {
+	var distances []float64
+	for i := 0; i < len(src); i++ {
+		distance := dist(points[src[i]], points[dest[i]])
+		fmt.Printf("points %d - %d have a distance of %fm\n", src[i], dest[i], distance)
+		distances = append(distances, distance)
+	}
+	return distances
 }

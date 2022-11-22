@@ -24,11 +24,11 @@ func dist(src []float64, dest []float64) float64 {
 	destLat := src[1]
 	destLon := src[0]
 
-	radlat1 := float64(PI * srcLat / 180)
-	radlat2 := float64(PI * destLat / 180)
+	radlat1 := float64(PI * srcLat / 180.0)
+	radlat2 := float64(PI * destLat / 180.0)
 
 	theta := float64(srcLon - destLon)
-	radtheta := float64(PI * theta / 180)
+	radtheta := float64(PI * theta / 180.0)
 
 	dist := math.Sin(radlat1)*math.Sin(radlat2) + math.Cos(radlat1)*math.Cos(radlat2)*math.Cos(radtheta)
 

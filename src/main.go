@@ -18,7 +18,7 @@ func main() {
 	//fetchWorld(PBFpath)
 
 	//generates grid around globe
-	points, indexMatrix := util.GenerateGraphPoints(500)
+	points, indexMatrix := util.GenerateGraphPoints(1000000)
 	util.PointsToGEOJSONFile(points)
 	//util.PrintEdgesToGEOJSON(util.GenerateEdges(points, indexMatrix))
 	util.CalcEdgeDistances(util.GenerateEdges(points, indexMatrix))

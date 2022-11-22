@@ -103,7 +103,7 @@ func CalcEdgeDistances(points [][]float64, src []int, dest []int) []float64 {
 	var distances []float64
 	for i := 0; i < len(src); i++ {
 		distance := dist(points[src[i]], points[dest[i]])
-		fmt.Printf("points %d - %d have a distance of %fm\n", src[i], dest[i], distance)
+		//fmt.Printf("points %d - %d have a distance of %fm\n", src[i], dest[i], distance)
 		distances = append(distances, distance)
 	}
 	return distances

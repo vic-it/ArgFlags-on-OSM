@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/vic-it/OSM-FMI/src/backend/server"
 	"github.com/vic-it/OSM-FMI/src/backend/util"
 )
 
@@ -18,8 +19,9 @@ func main() {
 	//fetchWorld(PBFpath)
 
 	//generates grid around globe
-	points, indexMatrix := util.GenerateGraphPoints(1000000)
+	points, indexMatrix := util.GenerateGraphPoints(100)
 	util.PointsToGEOJSONFile(points)
 	//util.PrintEdgesToGEOJSON(util.GenerateEdges(points, indexMatrix))
 	util.CalcEdgeDistances(util.GenerateEdges(points, indexMatrix))
+	server.StartServer()
 }

@@ -104,3 +104,7 @@ func PrintProgress(current int, max int, unit string) {
 	progress := float64(current) / float64(max)
 	fmt.Printf("Generating geojson file. Progress: %2.2f%s%d%s%d %s\n\r", 100*progress, "%... - ", current, " out of ", max, unit)
 }
+
+func GetClosestGridNode(lon float64, lat float64) (float64, float64) {
+	return lon, lat
+}

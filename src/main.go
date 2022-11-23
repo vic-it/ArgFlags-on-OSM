@@ -1,7 +1,10 @@
 package main
 
 import (
-	"github.com/vic-it/OSM-FMI/src/backend/server"
+	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/vic-it/OSM-FMI/src/backend/util"
 )
 
@@ -23,5 +26,36 @@ func main() {
 	util.PointsToGEOJSONFile(points)
 	//util.PrintEdgesToGEOJSON(util.GenerateEdges(points, indexMatrix))
 	util.CalcEdgeDistances(util.GenerateEdges(points, indexMatrix))
-	server.StartServer()
+	startServer()
+}
+
+func startServer() {
+	println("\nstarting http server...")
+	http.Handle("/", http.FileServer(http.Dir("./frontend")))
+	http.HandleFunc("/getpoint", getPointHandler())
+	http.ListenAndServe(":8080", nil)
+}
+
+func getPointHandler() http.HandlerFunc {
+	pointHandler := func(writer http.ResponseWriter, request *http.Request) {
+		urlQuery := request.URL.Query()
+		inputLon, _ := strconv.ParseFloat(urlQuery["lon"][0], 64)
+		inputLat, _ := strconv.ParseFloat(urlQuery["lat"][0], 64)
+
+		fmt.Printf("click lon: %f\n", inputLon)
+		fmt.Printf("click lat: %f\n", inputLat)
+
+		//TODO GET CLOSEST POINT HERE
+		lon, lat := util.GetClosestGridNode(inputLon, inputLat)
+
+		outputString := fmt.Sprintf("%fx%f", lon, lat)
+		writer.WriteHeader(http.StatusOK)
+		writer.Write([]byte(outputString))
+	}
+
+	return pointHandler
+}
+
+func getRouteHandler() {
+
 }

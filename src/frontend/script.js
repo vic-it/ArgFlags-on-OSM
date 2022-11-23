@@ -1,22 +1,50 @@
+var isStart = true;
+var start = {marker: null, lon: 0, lat: 0}
+var dest = {marker: null, lon: 0, lat: 0}
+
 
 function clickHandler(event){
     console.log(event)
     let url = new URL("http://localhost:8080/getpoint");
-    url.searchParams.append("lon", {lon: event.latlng.lon});
-    url.searchParams.append("lat", {lat: event.latlng.lat});
+    url.searchParams.append("lon", event.latlng.lng);
+    url.searchParams.append("lat", event.latlng.lat);
+    
+    //fetches result
     fetch(url).then((response) => {
-        console.log(response.text())
+        //extracts the response
+        answer = response.text()
+        return answer
+    }).then((result) => {
+        //takes body of response and splits it into the coordinates lon then lat
+        coordinates = result.split("x")
+        //0 lon, 1 lat, the + before the coordinates casts the string valued coordinates into number values
+        //i hate javascript
+        addMarker(+coordinates[0],+coordinates[1])
     })
 }
 
-function addMarker(lon, lat, type){
 
+// type 0 -> starting node, type 1 -> destination node
+function addMarker(lon, lat){
+    if(isStart){
+        if(start.marker != null){
+        map.removeLayer(start.marker)
+        }
+        start.marker = L.marker([lat, lon])
+        start.lon = lon
+        start.lat = lat
+        start.marker.addTo(map)
+    } else {
+        if(dest.marker !=null){
+        map.removeLayer(dest.marker)
+        }
+        dest.marker = L.marker([lat, lon])
+        dest.lon = lon
+        dest.lat = lat
+        dest.marker.addTo(map)
+    }
+    isStart =! isStart
 }
-
-function getClosestGridPoint({lon, lat}){
-
-}
-
 function calculateRoute(){
 
 }

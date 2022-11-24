@@ -1,7 +1,7 @@
 package util
 
-type basic struct {
-	nodes map[int64]node
+type Basic struct {
+	Nodes map[int64]node
 	//the ID of a way in this map is the ID of its first node -> for merge function
 	ways map[int64]way
 }

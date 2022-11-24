@@ -75,9 +75,10 @@ func isEdgeInTheWay(p point, e edge) bool {
 }
 
 // takes a whole basic format map as input, checks if one way starts where another ends -> merges them
-func MergeWays(inputMap basic) int {
+func MergeWays(inputMap Basic) int {
 	mergeCounter := 0
 	ways := inputMap.ways
+	//iterate over all ways
 	for firstWayID, way := range ways {
 		endWay, exists := ways[way.lastNodeID]
 		if exists && firstWayID != way.lastNodeID {
@@ -87,9 +88,6 @@ func MergeWays(inputMap basic) int {
 			mergeCounter++
 		}
 	}
-	fmt.Println("--------------attempt to merge touching ways--------------")
-	fmt.Printf("ways merged: %d\n", mergeCounter)
-	fmt.Printf("ways left: %d\n", len(inputMap.ways))
 	return mergeCounter
 }
 

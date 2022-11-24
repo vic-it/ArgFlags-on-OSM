@@ -19,7 +19,7 @@ func FMItoBASIC() {
 
 }
 
-func BASICtoGEOJSONFile(basicData basic) {
+func BASICtoGEOJSONFile(basicData Basic) {
 	//save basic data in geojson format -> as file (.json)
 	var polygonList [][][]float64
 	wayCtr := 0
@@ -33,12 +33,12 @@ func BASICtoGEOJSONFile(basicData basic) {
 			//increment node counter
 			nodeCtr++
 			var nodeAsArray []float64
-			nodeAsArray = append(nodeAsArray, basicData.nodes[nodex].lon)
-			nodeAsArray = append(nodeAsArray, basicData.nodes[nodex].lat)
+			nodeAsArray = append(nodeAsArray, basicData.Nodes[nodex].lon)
+			nodeAsArray = append(nodeAsArray, basicData.Nodes[nodex].lat)
 			// prepare node s.t. garbage collection will clean it up
-			basicData.nodes[nodex] = node{}
-
 			polygon = append(polygon, nodeAsArray)
+			//basicData.nodes[nodex] = node{}
+
 			// force garbage collection -> else memory overruns
 			if nodeCtr%10000 == 0 {
 				runtime.GC()
@@ -58,7 +58,7 @@ func BASICtoGEOJSONFile(basicData basic) {
 	rawJSON, _ := g.MarshalJSON()
 	err := os.WriteFile("../../data/geojson.json", rawJSON, 0644)
 	println("geojson file written to: '../../data/geojson.json'")
-	fmt.Printf("%d out of %d nodes were processed", nodeCtr, len(basicData.nodes))
+	fmt.Printf("%d out of %d nodes were processed\n", nodeCtr, len(basicData.Nodes))
 	if err != nil {
 		panic(err)
 	}
@@ -87,9 +87,10 @@ func GRAPHtoBASIC() {
 
 // this function takes in a path (as string) to a PBF file, reads it, extracts all coastlines and transforms them into the basic format
 // this code is mostly taken from https://pkg.go.dev/github.com/qedus/osmpbf#section-readme
-func PBFtoBASIC(path string) basic {
+func PBFtoBASIC(path string) Basic {
 	nodes := make(map[int64]node) //(key,value) -> (ID of node, {latitude, longitude})
 	ways := make(map[int64]way)   // -> (ID of way, [list of node IDs in way])
+	isUsefulNode := make(map[int64]bool)
 
 	f, err := os.Open(path)
 	if err != nil {
@@ -125,6 +126,9 @@ func PBFtoBASIC(path string) basic {
 				// only save ways with the coastline tag
 				if v.Tags["natural"] == "coastline" {
 					ways[v.NodeIDs[0]] = way{nodes: v.NodeIDs, lastNodeID: v.NodeIDs[len(v.NodeIDs)-1]}
+					for _, id := range v.NodeIDs {
+						isUsefulNode[id] = true
+					}
 					wc++
 				}
 			case *osmpbf.Relation:
@@ -137,11 +141,25 @@ func PBFtoBASIC(path string) basic {
 	}
 	//merges touching ways
 	fmt.Printf("Read: %d Nodes and %d Ways\n", len(nodes), len(ways))
+	oldWays := len(ways)
 	for {
-		if (MergeWays(basic{nodes: nodes, ways: ways}) == 0) {
+		if (MergeWays(Basic{Nodes: nodes, ways: ways}) == 0) {
 			break
 		}
 	}
+
+	fmt.Printf("ways merged: %d\n", (oldWays - len(ways)))
+	fmt.Printf("ways left: %d\n", len(ways))
+	//remove unused nodes
+	delCtr := 0
+	for id := range nodes {
+		if !isUsefulNode[id] {
+			delete(nodes, id)
+			delCtr++
+		}
+	}
+	runtime.GC()
+	fmt.Printf("%d unused nodes deleted\n", delCtr)
 	//checks if all ways left are polygons (can be deleted)
 	ctr := 0
 	for _, way := range ways {
@@ -150,7 +168,7 @@ func PBFtoBASIC(path string) basic {
 		}
 	}
 	fmt.Printf("Number of ways that are closed polygons: %d\n", ctr)
-	return basic{nodes: nodes, ways: ways}
+	return Basic{Nodes: nodes, ways: ways}
 }
 
 func PrintEdgesToGEOJSON(points [][]float64, src []int, dest []int) {

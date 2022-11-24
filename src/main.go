@@ -11,15 +11,17 @@ import (
 func fetchWorld(path string) {
 	//loads whole osm.pbf world from filepath into basic format
 	//basicWorld := util.PBFtoBASIC(path)
-	util.BASICtoGEOJSONFile(util.PBFtoBASIC(path))
+	var x util.Basic
+	x = util.PBFtoBASIC(path)
+	fmt.Printf("nodes left: %d\n", len(x.Nodes))
 }
 
 func main() {
 	//"../../data/antarctica.osm.pbf"
 	//"../../data/central-america.osm.pbf"
 	// "../../data/global.sec" THIS IS THE BIG ONE FROM ILIAS (renamed, takes up ~11GB of RAM!)
-	//PBFpath := "../../data/antarctica.osm.pbf"
-	//fetchWorld(PBFpath)
+	PBFpath := "../../data/antarctica.osm.pbf"
+	fetchWorld(PBFpath)
 
 	//generates grid around globe
 	points, indexMatrix := util.GenerateGraphPoints(100)

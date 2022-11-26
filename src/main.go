@@ -15,13 +15,14 @@ func fetchWorld(path string) {
 	fmt.Printf("Number of edges left: %d\n", len(nodes))
 
 	//test here
-	testpoints := [][]float64{{51, -78}, {-152, -68}, {153, -88}, {-54, -88}, {85, -88}}
+	testpoints := [][]float64{{51, -78}, {-152, -68}, {153, -88}, {-54, -88}, {-62.8771, -64.6543}}
 	for _, node := range testpoints {
-		relEdges, _ := util.GetRelevantEdges(node, lonList, maxLat, minLat, maxDiff)
+		relEdges, maybe := util.GetRelevantEdges(node, lonList, maxLat, minLat, maxDiff)
 		fmt.Printf("----------------------\n(%f/%f) crosses %d edges upward:\n", node[0], node[1], len(relEdges))
 		for _, id := range relEdges {
 			fmt.Printf("lon: (%f to %f)\nlat: (%f to %f)\n-\n", nodes[edges[id][0]][0], nodes[edges[id][1]][0], nodes[edges[id][0]][1], nodes[edges[id][1]][1])
 		}
+		fmt.Printf("%d 'maybe' edges\n", len(maybe))
 	}
 
 	//util.BASICtoGEOJSONFile(util.PBFtoBASIC(path))

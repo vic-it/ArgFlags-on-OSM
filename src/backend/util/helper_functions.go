@@ -188,7 +188,7 @@ func GetRelevantEdges(node []float64, sortedLonList []EdgeCoordinate, maxLatList
 	defAboveList := mergeEdgeCoordinateLists(relevantMaxLat, relevantMinLat)
 	//elements definitely in the way
 	defRelevantEdges := mergeIDLists(relevantLonEdges, defAboveList)
-	edgesWhereOnePointIsBelow := secondListMinusSecondList(relevantMinLat, relevantMaxLat)
+	edgesWhereOnePointIsBelow := secondListMinusFirstList(relevantMinLat, relevantMaxLat)
 	maybeRelevantEdges := mergeIDLists(edgesWhereOnePointIsBelow, relevantLonEdges)
 	//get list of edges _maybe_ in the way, not guaranteed
 
@@ -274,7 +274,7 @@ func mergeIDLists(l1 []int, l2 []int) []int {
 	return c
 }
 
-func secondListMinusSecondList(l1 []EdgeCoordinate, l2 []EdgeCoordinate) []int {
+func secondListMinusFirstList(l1 []EdgeCoordinate, l2 []EdgeCoordinate) []int {
 	m := make(map[int]bool)
 	var c []int
 

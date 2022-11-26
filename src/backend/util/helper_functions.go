@@ -116,16 +116,16 @@ func GetRelevantEdges(node []float64, sortedLonList []EdgeCoordinate, maxLatList
 		rawLeftStart := BinarySearchForID(node[0]-maxLonDiff, sortedLonList)
 		rawLeftEnd := BinarySearchForID(node[0], sortedLonList)
 		// right side: lon to lon+maxdiff
-		rawRighStart := BinarySearchForID(node[0], sortedLonList)
+		rawRightStart := BinarySearchForID(node[0], sortedLonList)
 		rawRightEnd := BinarySearchForID(node[0]+maxLonDiff, sortedLonList)
 		// MAKE CLEANED START INDEX (1 extra element from each direction, but not out of bounds)
-		leftStart := int(math.Max(0, float64(rawLeftStart-1.0)))
-		leftEnd := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawLeftEnd+1)))
-		rightStart := int(math.Max(0, float64(rawRighStart-1.0)))
-		rightEnd := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawRightEnd+1)))
+		//leftStart := int(math.Max(0, float64(rawLeftStart-1.0)))
+		//leftEnd := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawLeftEnd+1)))
+		//rightStart := int(math.Max(0, float64(rawRightStart-1.0)))
+		//rightEnd := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawRightEnd+1)))
 		// make slices
-		leftList = sortedLonList[leftStart:leftEnd]
-		rightList = sortedLonList[rightStart:rightEnd]
+		leftList = sortedLonList[rawLeftStart:rawLeftEnd]
+		rightList = sortedLonList[rawRightStart:rawRightEnd]
 		//case we are too close to 180, coming from left side
 	} else if node[0]+maxLonDiff >= 180 {
 		// left side from lon-maxdiff to node
@@ -138,16 +138,16 @@ func GetRelevantEdges(node []float64, sortedLonList []EdgeCoordinate, maxLatList
 		rawRightStart2 := BinarySearchForID(-179.999999999999, sortedLonList)
 		rawRightEnd2 := BinarySearchForID(node[0]+maxLonDiff-360.0, sortedLonList)
 		// MAKE CLEANED START INDEX (1 extra element from each direction, but not out of bounds)
-		leftStart := int(math.Max(0, float64(rawLeftStart-1.0)))
-		leftEnd := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawLeftEnd+1)))
-		rightStart1 := int(math.Max(0, float64(rawRightStart1-1.0)))
-		rightEnd1 := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawRightEnd1+1)))
-		rightStart2 := int(math.Max(0, float64(rawRightStart2-1.0)))
-		rightEnd2 := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawRightEnd2+1)))
+		//leftStart := int(math.Max(0, float64(rawLeftStart-1.0)))
+		//leftEnd := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawLeftEnd+1)))
+		//rightStart1 := int(math.Max(0, float64(rawRightStart1-1.0)))
+		//rightEnd1 := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawRightEnd1+1)))
+		//rightStart2 := int(math.Max(0, float64(rawRightStart2-1.0)))
+		//rightEnd2 := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawRightEnd2+1)))
 		//make slices
-		leftList = sortedLonList[leftStart:leftEnd]
-		rightList = sortedLonList[rightStart1:rightEnd1]
-		rightList = append(rightList, sortedLonList[rightStart2:rightEnd2]...)
+		leftList = sortedLonList[rawLeftStart:rawLeftEnd]
+		rightList = sortedLonList[rawRightStart1:rawRightEnd1]
+		rightList = append(rightList, sortedLonList[rawRightStart2:rawRightEnd2]...)
 		//case we are too close to -180 coming from right side
 	} else {
 		// left side from -180 to lon
@@ -160,16 +160,16 @@ func GetRelevantEdges(node []float64, sortedLonList []EdgeCoordinate, maxLatList
 		rawRightStart := BinarySearchForID(node[0], sortedLonList)
 		rawRightEnd := BinarySearchForID(node[0]+maxLonDiff, sortedLonList)
 		// MAKE CLEANED START INDEX (1 extra element from each direction, but not out of bounds)
-		leftStart1 := int(math.Max(0, float64(rawLeftStart1-1.0)))
-		leftEnd1 := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawLeftEnd1+1)))
-		leftStart2 := int(math.Max(0, float64(rawLeftStart2-1.0)))
-		leftEnd2 := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawLeftEnd2+1)))
-		rightStart := int(math.Max(0, float64(rawRightStart-1.0)))
-		rightEnd := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawRightEnd+1)))
+		//leftStart1 := int(math.Max(0, float64(rawLeftStart1-1.0)))
+		//leftEnd1 := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawLeftEnd1+1)))
+		//leftStart2 := int(math.Max(0, float64(rawLeftStart2-1.0)))
+		//leftEnd2 := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawLeftEnd2+1)))
+		//rightStart := int(math.Max(0, float64(rawRightStart-1.0)))
+		//rightEnd := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawRightEnd+1)))
 		// make slices
-		leftList = sortedLonList[leftStart1:leftEnd1]
-		leftList = append(leftList, sortedLonList[leftStart2:leftEnd2]...)
-		rightList = sortedLonList[rightStart:rightEnd]
+		leftList = sortedLonList[rawLeftStart1:rawLeftEnd1]
+		leftList = append(leftList, sortedLonList[rawLeftStart2:rawLeftEnd2]...)
+		rightList = sortedLonList[rawRightStart:rawRightEnd]
 	}
 
 	//compute relevant latitudes

@@ -15,6 +15,7 @@ func fetchWorld(path string) {
 	fmt.Printf("Number of edges left: %d\n", len(nodes))
 
 	//test here
+	// intersection probably a bottle neck -> only look for maxlat minlat after the longitude test
 	testpoints := [][]float64{{51, -78}, {-152, -68}, {153, -88}, {-54, -88}, {-62.8771, -64.6543}}
 	for _, node := range testpoints {
 		relEdges, maybe := util.GetRelevantEdges(node, lonList, maxLat, minLat, maxDiff)

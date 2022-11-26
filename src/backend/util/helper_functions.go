@@ -12,7 +12,6 @@ func IsPointInWater(p point) bool {
 	// numberOfEdgesGaruanteedInTheWay, questionableEdges := GetTestSQLResult(p)
 	// for every edge e call isEdgeInTheWay(p, e)
 	// if true -> number += 1
-
 	return false
 }
 
@@ -105,4 +104,169 @@ func PrintProgress(current int, max int, unit string) {
 
 func GetClosestGridNode(lon float64, lat float64) (float64, float64) {
 	return lon, lat
+}
+
+func GetRelevantEdges(node []float64, sortedLonList []EdgeCoordinate, maxLatList []EdgeCoordinate, minLatList []EdgeCoordinate, maxLonDiff float64) (int, []int) {
+	var leftList []EdgeCoordinate
+	var rightList []EdgeCoordinate
+	// numberOfEdgesGaruanteedInTheWay
+	var n int
+
+	//regular case
+	if math.Abs(node[0])+maxLonDiff < 180 {
+		// left side: lon-maxdiff to lon
+		rawLeftStart := BinarySearchForID(node[0]-maxLonDiff, sortedLonList)
+		rawLeftEnd := BinarySearchForID(node[0], sortedLonList)
+		// right side: lon to lon+maxdiff
+		rawRighStart := BinarySearchForID(node[0], sortedLonList)
+		rawRightEnd := BinarySearchForID(node[0]+maxLonDiff, sortedLonList)
+		// MAKE CLEANED START INDEX (1 extra element from each direction, but not out of bounds)
+		leftStart := int(math.Max(0, float64(rawLeftStart-1.0)))
+		leftEnd := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawLeftEnd+1)))
+		rightStart := int(math.Max(0, float64(rawRighStart-1.0)))
+		rightEnd := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawRightEnd+1)))
+		// make slices
+		leftList = sortedLonList[leftStart:leftEnd]
+		rightList = sortedLonList[rightStart:rightEnd]
+		//case we are too close to 180, coming from left side
+	} else if node[0]+maxLonDiff >= 180 {
+		// left side from lon-maxdiff to node
+		rawLeftStart := BinarySearchForID(node[0]-maxLonDiff, sortedLonList)
+		rawLeftEnd := BinarySearchForID(node[0], sortedLonList)
+		// right side from node to 180
+		rawRightStart1 := BinarySearchForID(node[0], sortedLonList)
+		rawRightEnd1 := BinarySearchForID(180.0, sortedLonList)
+		// right side from -180 to rest of right nodes (e.g. to -175)
+		rawRightStart2 := BinarySearchForID(-180, sortedLonList)
+		rawRightEnd2 := BinarySearchForID(node[0]+maxLonDiff-360.0, sortedLonList)
+		// MAKE CLEANED START INDEX (1 extra element from each direction, but not out of bounds)
+		leftStart := int(math.Max(0, float64(rawLeftStart-1.0)))
+		leftEnd := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawLeftEnd+1)))
+		rightStart1 := int(math.Max(0, float64(rawRightStart1-1.0)))
+		rightEnd1 := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawRightEnd1+1)))
+		rightStart2 := int(math.Max(0, float64(rawRightStart2-1.0)))
+		rightEnd2 := int(math.Min(float64((len(sortedLonList) - 1)), float64(rawRightEnd2+1)))
+		//make slices
+		leftList = sortedLonList[leftStart:leftEnd]
+		rightList = sortedLonList[rightStart1:rightEnd1]
+		rightList = append(rightList, sortedLonList[rightStart2:rightEnd2]...)
+		//case we are too close to -180 coming from right side
+	} else {
+		// left side from -180 to lon
+		rawLeftStart1 := BinarySearchForID(-180.0, sortedLonList)
+		rawLeftEnd1 := BinarySearchForID(node[0], sortedLonList)
+		// remainder of left side (e.g. from 175) to 180
+		rawLeftStart2 := BinarySearchForID(node[0]-maxLonDiff+360.0, sortedLonList)
+		rawLeftEnd2 := BinarySearchForID(180, sortedLonList)
+		// right side from lon to lon+diff
+		rightStart := BinarySearchForID(node[0], sortedLonList)
+		rightEnd := BinarySearchForID(node[0]+maxLonDiff, sortedLonList)
+		// make slices
+		leftList = sortedLonList[int(math.Max(0, float64(rawLeftStart1-1.0))):int(math.Min(float64((len(sortedLonList)-1)), float64(rawLeftEnd1+1)))]
+		leftList = append(leftList, sortedLonList[int(math.Max(0, float64(rawLeftStart2-1.0))):int(math.Min(float64((len(sortedLonList)-1)), float64(rawLeftEnd2+1)))]...)
+		rightList = sortedLonList[int(math.Max(0, float64(rightStart-1.0))):int(math.Min(float64((len(sortedLonList)-1)), float64(rightEnd+1)))]
+	}
+
+	//compute relevant latitudes
+	relevantMaxLat := maxLatList[BinarySearchForID(node[1], maxLatList):]
+	relevantMinLat := minLatList[BinarySearchForID(node[1], minLatList):]
+
+	relevantLonEdges := mergeEdgeCoordinateLists(leftList, rightList)
+	defAboveList := mergeEdgeCoordinateLists(relevantMaxLat, relevantMinLat)
+	//elements definitely in the way
+	n = len(mergeIDLists(relevantLonEdges, defAboveList))
+	edgesWhereOnePointIsBelow := secondListMinusSecondList(relevantMinLat, relevantMaxLat)
+	maybeRelevantEdges := mergeIDLists(edgesWhereOnePointIsBelow, relevantLonEdges)
+	//get list of edges _maybe_ in the way, not guaranteed
+
+	//intersection of relevantMinLat and the relevant longitude wise edges -> number of guaranteed edges
+	//intersection of relevantMaxLat and the relevant longitude wise edges -> list of maybe in the way edges +  guaranteed in the way edges
+
+	// maybe relevant: maxLat > node[1], minLat < node [1]
+	// ===> and one lon on left side and one lon on right side
+
+	return n, maybeRelevantEdges
+}
+
+func CalcLonDiff(lon1 float64, lon2 float64) float64 {
+	abs := math.Abs(lon1 - lon2)
+	if abs > 180.0 {
+		return 360.0 - abs
+	}
+	return abs
+}
+
+// returns low (or high), if it returns -1 -> threshhold out of list
+func BinarySearchForID(threshhold float64, list []EdgeCoordinate) int {
+	//index of first value ABOVE threshhold
+	low := 0
+	//index of first value BELOW threshhold
+	high := len(list) - 1
+
+	for low <= high {
+		median := (low + high) / 2
+
+		if list[median].coordinate < threshhold {
+			low = median + 1
+		} else {
+			high = median - 1
+		}
+		if high < 0 || low < 0 || high > len(list)-1 || low > len(list)-1 {
+			println("threshhold is out of list bounds")
+			return -1
+		}
+		//fmt.Printf("threshhold: %f\nvalue at low(%d): %f\nvalue at high(%d): %f\n", threshhold, low, list[low].coordinate, high, list[high].coordinate)
+		//10° -> 175 -> left side in 165-175, right side 175-180 and -180 to -175
+		//10° -> 135 -> left side in 125-135, right side 135-145
+	}
+
+	return low
+}
+
+func mergeEdgeCoordinateLists(l1 []EdgeCoordinate, l2 []EdgeCoordinate) []int {
+	m := make(map[int]bool)
+	var c []int
+
+	for _, item := range l1 {
+		m[item.edgeID] = true
+	}
+
+	for _, item := range l2 {
+		if _, ok := m[item.edgeID]; ok {
+			c = append(c, item.edgeID)
+		}
+	}
+	return c
+}
+
+func mergeIDLists(l1 []int, l2 []int) []int {
+	m := make(map[int]bool)
+	var c []int
+
+	for _, item := range l1 {
+		m[item] = true
+	}
+
+	for _, item := range l2 {
+		if _, ok := m[item]; ok {
+			c = append(c, item)
+		}
+	}
+	return c
+}
+
+func secondListMinusSecondList(l1 []EdgeCoordinate, l2 []EdgeCoordinate) []int {
+	m := make(map[int]bool)
+	var c []int
+
+	for _, item := range l1 {
+		m[item.edgeID] = true
+	}
+
+	for _, item := range l2 {
+		if _, ok := m[item.edgeID]; !ok {
+			c = append(c, item.edgeID)
+		}
+	}
+	return c
 }

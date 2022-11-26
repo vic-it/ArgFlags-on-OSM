@@ -11,9 +11,14 @@ import (
 func fetchWorld(path string) {
 	//loads whole osm.pbf world from filepath into basic format
 	//basicWorld := util.PBFtoBASIC(path)
-	var x util.Basic
-	x = util.PBFtoBASIC(path)
-	fmt.Printf("nodes left: %d\n", len(x.Nodes))
+	x, _, lonList, maxLat, minLat, maxDiff := util.GetWorld(path)
+	testNode := []float64{-87.0, 29.0}
+	n, mayberelevantlist := util.GetRelevantEdges(testNode, lonList, maxLat, minLat, maxDiff)
+	fmt.Printf("Number of edges left: %d\n", len(x))
+
+	fmt.Printf("%d edges definitely in the way, %d edges maybe in the way", n, len(mayberelevantlist))
+
+	//util.BASICtoGEOJSONFile(util.PBFtoBASIC(path))
 }
 
 func main() {
@@ -61,3 +66,7 @@ func getPointHandler() http.HandlerFunc {
 func getRouteHandler() {
 
 }
+
+// left[(lon1, edgeID1), (lon2, edgeID2)]
+// right[(lon3, edgeID3), (lon4, edgeID2)]
+// -> edgeID2 is a possibly rfelevant edge

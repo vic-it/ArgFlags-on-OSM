@@ -1,5 +1,10 @@
 package util
 
+type EdgeCoordinate struct {
+	edgeID     int
+	coordinate float64
+}
+
 type Basic struct {
 	Nodes map[int64]node
 	//the ID of a way in this map is the ID of its first node -> for merge function

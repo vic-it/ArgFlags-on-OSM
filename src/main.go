@@ -11,12 +11,18 @@ import (
 func fetchWorld(path string) {
 	//loads whole osm.pbf world from filepath into basic format
 	//basicWorld := util.PBFtoBASIC(path)
-	x, _, lonList, maxLat, minLat, maxDiff := util.GetWorld(path)
-	testNode := []float64{-87.0, 29.0}
-	n, mayberelevantlist := util.GetRelevantEdges(testNode, lonList, maxLat, minLat, maxDiff)
-	fmt.Printf("Number of edges left: %d\n", len(x))
+	nodes, edges, lonList, maxLat, minLat, maxDiff := util.GetWorld(path)
+	fmt.Printf("Number of edges left: %d\n", len(nodes))
 
-	fmt.Printf("%d edges definitely in the way, %d edges maybe in the way", n, len(mayberelevantlist))
+	//test here
+	testpoints := [][]float64{{51, -78}, {-152, -68}, {153, -88}, {-54, -88}, {85, -88}}
+	for _, node := range testpoints {
+		relEdges, _ := util.GetRelevantEdges(node, lonList, maxLat, minLat, maxDiff)
+		fmt.Printf("----------------------\n(%f/%f) crosses %d edges upward:\n", node[0], node[1], len(relEdges))
+		for _, id := range relEdges {
+			fmt.Printf("lon: (%f to %f)\nlat: (%f to %f)\n-\n", nodes[edges[id][0]][0], nodes[edges[id][1]][0], nodes[edges[id][0]][1], nodes[edges[id][1]][1])
+		}
+	}
 
 	//util.BASICtoGEOJSONFile(util.PBFtoBASIC(path))
 }

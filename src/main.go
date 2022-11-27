@@ -11,37 +11,52 @@ import (
 func fetchWorld(path string) {
 	//loads whole osm.pbf world from filepath into basic format
 	//basicWorld := util.PBFtoBASIC(path)
-	nodes, edges, lonList, maxLat, minLat, maxDiff := util.GetWorld(path)
-	fmt.Printf("Number of edges left: %d\n", len(nodes))
 
 	//test here
 	// intersection probably a bottle neck -> only look for maxlat minlat after the longitude test
-	testpoints := [][]float64{{51, -78}, {-152, -68}, {153, -88}, {-54, -88}, {-62.8771, -64.6543}}
-	for _, node := range testpoints {
-		relEdges, maybe := util.GetRelevantEdges(node, lonList, maxLat, minLat, maxDiff)
-		fmt.Printf("----------------------\n(%f/%f) crosses %d edges upward:\n", node[0], node[1], len(relEdges))
-		for _, id := range relEdges {
-			fmt.Printf("lon: (%f to %f)\nlat: (%f to %f)\n-\n", nodes[edges[id][0]][0], nodes[edges[id][1]][0], nodes[edges[id][0]][1], nodes[edges[id][1]][1])
-		}
-		fmt.Printf("%d 'maybe' edges\n", len(maybe))
-	}
+	// testpoints := [][]float64{{51, -78}, {-152, -68}, {153, -88}, {-54, -88}, {-62.8771, -64.6543}}
+	// for _, node := range testpoints {
+	// 	relEdges, maybe := util.GetRelevantEdges(node, coastline)
+	// 	fmt.Printf("----------------------\n(%f/%f) crosses %d edges upward:\n", node[0], node[1], len(relEdges))
+	// 	for _, id := range relEdges {
+	// 		fmt.Printf("lon: (%f to %f)\nlat: (%f to %f)\n-\n", nodes[edges[id][0]][0], nodes[edges[id][1]][0], nodes[edges[id][0]][1], nodes[edges[id][1]][1])
+	// 	}
+	// 	fmt.Printf("%d 'maybe' edges\n", len(maybe))
+	// }
 
 	//util.BASICtoGEOJSONFile(util.PBFtoBASIC(path))
 }
 
 func main() {
+	testPointInWater()
+	//start()
+}
+
+func start() {
+
 	//"../../data/antarctica.osm.pbf"
 	//"../../data/central-america.osm.pbf"
 	// "../../data/global.sec" THIS IS THE BIG ONE FROM ILIAS (renamed, takes up ~11GB of RAM!)
-	PBFpath := "../../data/antarctica.osm.pbf"
-	fetchWorld(PBFpath)
-
-	//generates grid around globe
-	points, indexMatrix := util.GenerateGraphPoints(100)
-	util.PointsToGEOJSONFile(points)
-	//util.PrintEdgesToGEOJSON(util.GenerateEdges(points, indexMatrix))
-	util.CalcEdgeDistances(util.GenerateEdges(points, indexMatrix))
+	//points, indexMatrix, pointInWaterMatrix := util.GenerateGraphPoints(500, coastline)
+	//util.PointsToGEOJSONFile(points)
+	//util.PrintEdgesToGEOJSON(util.GenerateEdges(points, indexMatrix, pointInWaterMatrix))
+	//util.CalcEdgeDistances(util.GenerateEdges(points, indexMatrix))
 	startServer()
+}
+
+func testPointInWater() {
+	path := "../../data/antarctica.osm.pbf"
+	coastline := util.GetCoastline(path)
+	//generates grid around globe
+	var testPoints [][]float64
+	testPoints = append(testPoints, []float64{-72.0000, -71.4286})
+	for _, p := range testPoints {
+		util.IsPointInWater(p, coastline)
+	}
+	//
+	//points, indexMatrix, pointInWaterMatrix := util.GenerateGraphPoints(5000, coastline)
+	//util.PointsToGEOJSONFile(points)
+	//util.PrintEdgesToGEOJSON(util.GenerateEdges(points, indexMatrix, pointInWaterMatrix))
 }
 
 func startServer() {

@@ -193,14 +193,12 @@ func PrintEdgesToGEOJSON(points [][]float64, src []int, dest []int) {
 // (1,2), (2,3), (3,4), (4,5), (5,1)
 
 // gets the pbf file from the path and outputs a list of all edges and 3 lists of edge id's sorted by e.g. max lat
-func GetWorld(path string) (map[int64][]float64, [][]int64, []EdgeCoordinate, []EdgeCoordinate, []EdgeCoordinate, float64) {
+func GetCoastline(path string) Coastline {
 	nodes := make(map[int64][]float64) //(ID,[lon, lat])
-	isUsefulNode := make(map[int64]bool)
+	//isUsefulNode := make(map[int64]bool)
 	var edges [][]int64 // -> (ID of EDGE, [ID node 1, ID node 2])
 	//all sorted from min -> max
 	var sortedLonList []EdgeCoordinate
-	var maxLatList []EdgeCoordinate
-	var minLatList []EdgeCoordinate
 	//maximum width of an edge
 	var maxEdgeWidth float64
 
@@ -241,9 +239,10 @@ func GetWorld(path string) (map[int64][]float64, [][]int64, []EdgeCoordinate, []
 					for i := 0; i < len(v.NodeIDs)-1; i++ {
 						edges = append(edges, []int64{v.NodeIDs[i], v.NodeIDs[i+1]})
 					}
-					for _, id := range v.NodeIDs {
-						isUsefulNode[id] = true
-					}
+					//re-enable for deleting useless nodes -> takes 30s extra time for global
+					// for _, id := range v.NodeIDs {
+					// 	isUsefulNode[id] = true
+					// }
 					wc++
 				}
 			case *osmpbf.Relation:
@@ -259,8 +258,6 @@ func GetWorld(path string) (map[int64][]float64, [][]int64, []EdgeCoordinate, []
 	for id, edge := range edges {
 		// !!!some nodes/edges are in a circle on lat -85 -> faulty data?
 		maxEdgeWidth = math.Max(maxEdgeWidth, CalcLonDiff(nodes[edge[0]][0], nodes[edge[1]][0]))
-		maxLatList = append(maxLatList, EdgeCoordinate{edgeID: id, coordinate: math.Max(nodes[edge[0]][1], nodes[edge[1]][1])})
-		minLatList = append(maxLatList, EdgeCoordinate{edgeID: id, coordinate: math.Min(nodes[edge[0]][1], nodes[edge[1]][1])})
 		sortedLonList = append(sortedLonList, EdgeCoordinate{edgeID: id, coordinate: nodes[edge[0]][0]})
 		sortedLonList = append(sortedLonList, EdgeCoordinate{edgeID: id, coordinate: nodes[edge[1]][0]})
 	}
@@ -268,23 +265,21 @@ func GetWorld(path string) (map[int64][]float64, [][]int64, []EdgeCoordinate, []
 
 	// sort lists by coordinate
 	//functions for sorting algorithm
-
-	sort.Sort(ByCoordinate(maxLatList))
-	sort.Sort(ByCoordinate(minLatList))
 	sort.Sort(ByCoordinate(sortedLonList))
 
 	fmt.Printf("Read: %d Nodes and %d edges\n", len(nodes), len(edges))
 	//remove unused nodes
-	delCtr := 0
-	for id := range nodes {
-		if !isUsefulNode[id] {
-			delete(nodes, id)
-			delCtr++
-		}
-	}
-	runtime.GC()
-	fmt.Printf("%d unused nodes deleted\n", delCtr)
-	return nodes, edges, sortedLonList, maxLatList, minLatList, maxEdgeWidth
+	// delCtr := 0
+	// for id := range nodes {
+	// 	if !isUsefulNode[id] {
+	// 		delete(nodes, id)
+	// 		delCtr++
+	// 	}
+	// }
+	// runtime.GC()
+	// fmt.Printf("%d unused nodes deleted\n", delCtr)
+	coastline := Coastline{Nodes: nodes, Edges: edges, SortedLonEdgeList: sortedLonList, MaxLonDiff: maxEdgeWidth}
+	return coastline
 }
 
 type ByCoordinate []EdgeCoordinate

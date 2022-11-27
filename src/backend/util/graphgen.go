@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"math"
+	"time"
 )
 
 // transforms a node into a point (x,y) coordinates w.r.t meters
@@ -17,11 +18,14 @@ func PointToNode(p point) node {
 }
 
 // math from here https://www.cmu.edu/biolphys/deserno/pdf/sphere_equi.pdf
-func GenerateGraphPoints(numberOfNodes int) ([][]float64, [][]int) {
+func GenerateGraphPoints(numberOfNodes int, coastline Coastline) ([][]float64, [][]int, [][]bool) {
+	println("generating points...")
+	startTime := time.Now()
 	// simple list of all points
 	var points [][]float64
 	//list but as 2d-ish grid for edge creation -> with index of points in "points[]"
 	var pointMatrix [][]int
+	var isPointInWaterMatrix [][]bool
 	pi := math.Pi
 	//count of nodes
 	count := 0
@@ -33,6 +37,7 @@ func GenerateGraphPoints(numberOfNodes int) ([][]float64, [][]int) {
 	// iterate over lats
 	for m := 0.0; m < Mv; m++ {
 		var latList []int
+		var waterLatList []bool
 		v := pi * (m + 0.5) / Mv
 		Mp := math.Round(2.0 * pi * math.Sin(v) / dp)
 		// iterate over longs
@@ -47,12 +52,17 @@ func GenerateGraphPoints(numberOfNodes int) ([][]float64, [][]int) {
 			point = append(point, lat)
 			points = append(points, point)
 			latList = append(latList, len(points)-1)
+			z := IsPointInWater(point, coastline)
+			waterLatList = append(waterLatList, z)
 			count++
 		}
+		isPointInWaterMatrix = append(isPointInWaterMatrix, waterLatList)
 		pointMatrix = append(pointMatrix, latList)
 	}
 	fmt.Printf("%d points created\n", count)
-	return points, pointMatrix
+	endTime := time.Now()
+	println(int(endTime.Sub(startTime).Seconds()))
+	return points, pointMatrix, isPointInWaterMatrix
 }
 
 func radToDeg(theta float64, phi float64) (float64, float64) {
@@ -61,37 +71,55 @@ func radToDeg(theta float64, phi float64) (float64, float64) {
 	return lon, lat
 }
 
-func GenerateEdges(points [][]float64, indexMatrix [][]int) ([][]float64, []int, []int) {
+func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix [][]bool) ([][]float64, []int, []int) {
+	println("creating edges from points...")
 	var edgeSource []int
 	var edgeDest []int
+
 	for y := 0; y < len(indexMatrix); y++ {
 		latList := indexMatrix[y]
 		for x := 0; x < len(latList); x++ {
 			//add left edge
-			edgeSource = append(edgeSource, indexMatrix[y][x])
-			if x == 0 {
-				edgeDest = append(edgeDest, indexMatrix[y][len(latList)-1])
-			} else {
-				edgeDest = append(edgeDest, indexMatrix[y][x-1])
-			}
-			//add right edge
-			edgeSource = append(edgeSource, indexMatrix[y][x])
-			if x == len(latList)-1 {
-				edgeDest = append(edgeDest, indexMatrix[y][0])
-			} else {
-				edgeDest = append(edgeDest, indexMatrix[y][x+1])
-			}
-			//add below edge
-			if y != 0 {
-				position := int(math.Round(float64(x * len(indexMatrix[y-1]) / len(indexMatrix[y]))))
-				edgeSource = append(edgeSource, indexMatrix[y][x])
-				edgeDest = append(edgeDest, indexMatrix[y-1][position])
-			}
-			//add above edge
-			if y != len(indexMatrix)-1 {
-				position := int(math.Round(float64(x * len(indexMatrix[y+1]) / len(indexMatrix[y]))))
-				edgeSource = append(edgeSource, indexMatrix[y][x])
-				edgeDest = append(edgeDest, indexMatrix[y+1][position])
+			if pointsInWaterMatrix[y][x] {
+				if x == 0 {
+					if pointsInWaterMatrix[y][len(latList)-1] {
+						edgeSource = append(edgeSource, indexMatrix[y][x])
+						edgeDest = append(edgeDest, indexMatrix[y][len(latList)-1])
+					}
+				} else {
+					if pointsInWaterMatrix[y][x-1] {
+						edgeSource = append(edgeSource, indexMatrix[y][x])
+						edgeDest = append(edgeDest, indexMatrix[y][x-1])
+					}
+				}
+				//add right edge
+				if x == len(latList)-1 {
+					if pointsInWaterMatrix[y][0] {
+						edgeSource = append(edgeSource, indexMatrix[y][x])
+						edgeDest = append(edgeDest, indexMatrix[y][0])
+					}
+				} else {
+					if pointsInWaterMatrix[y][x+1] {
+						edgeSource = append(edgeSource, indexMatrix[y][x])
+						edgeDest = append(edgeDest, indexMatrix[y][x+1])
+					}
+				}
+				//add below edge
+				if y != 0 {
+					position := int(math.Round(float64(x * len(indexMatrix[y-1]) / len(indexMatrix[y]))))
+					if pointsInWaterMatrix[y-1][position] {
+						edgeSource = append(edgeSource, indexMatrix[y][x])
+						edgeDest = append(edgeDest, indexMatrix[y-1][position])
+					}
+				}
+				//add above edge
+				if y != len(indexMatrix)-1 {
+					position := int(math.Round(float64(x * len(indexMatrix[y+1]) / len(indexMatrix[y]))))
+					if pointsInWaterMatrix[y+1][position] {
+						edgeSource = append(edgeSource, indexMatrix[y][x])
+						edgeDest = append(edgeDest, indexMatrix[y+1][position])
+					}
+				}
 			}
 		}
 	}

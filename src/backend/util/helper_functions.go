@@ -132,7 +132,7 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 	edges := coastline.Edges
 	sortedLonList := coastline.SortedLonEdgeList
 	maxLonDiff := coastline.MaxLonDiff
-
+	fmt.Printf("sorted lon total: %d\n", len(sortedLonList))
 	//regular case
 	if math.Abs(node[0])+maxLonDiff < 180 {
 		// left side: lon-maxdiff to lon
@@ -176,7 +176,11 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 		rightList = sortedLonList[rawRightStart:rawRightEnd]
 	}
 
+	fmt.Printf("leftlist: %d\n", len(leftList))
+	fmt.Printf("rightlist: %d\n", len(rightList))
 	relevantLonEdges := mergeEdgeCoordinateLists(leftList, rightList)
+
+	fmt.Printf("relevant lon total: %d\n------\n", len(relevantLonEdges))
 	// generate lat list out of longitude-relevant edges
 	var maxLatList []EdgeCoordinate
 	var minLatList []EdgeCoordinate
@@ -200,16 +204,17 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 	if idOfBiggerThanMinLat >= 0 {
 		relevantMinLat = maxLatList[idOfBiggerThanMinLat:]
 	}
-	// println("max lat above:")
-	// for _, x := range relevantMaxLat {
-	// 	e := x.edgeID
-	// 	fmt.Printf("lon edge: lat[%f - %f] lon[%f - %f]\n", nodes[edges[e][0]][1], nodes[edges[e][1]][1], nodes[edges[e][0]][0], nodes[edges[e][1]][0])
-	// }
-	defAboveList := mergeEdgeCoordinateLists(relevantMaxLat, relevantMinLat)
+	var defAboveList []int
+	for _, e := range relevantMinLat {
+		defAboveList = append(defAboveList, e.edgeID)
+	}
 	//elements definitely in the way
-	defRelevantEdges := mergeIDLists(relevantLonEdges, defAboveList)
-	edgesWhereOnePointIsBelow := secondListMinusFirstList(relevantMinLat, relevantMaxLat)
-	maybeRelevantEdges := mergeIDLists(edgesWhereOnePointIsBelow, relevantLonEdges)
+	// defRelevantEdges := mergeIDLists(relevantLonEdges, defAboveList)
+	var maybeAboveList []int
+	if len(relevantMinLat) != len(relevantMaxLat) {
+		maybeAboveList = secondListMinusFirstList(relevantMinLat, relevantMaxLat)
+	}
+	// maybeRelevantEdges := mergeIDLists(edgesWhereOnePointIsBelow, relevantLonEdges)
 	//get list of edges _maybe_ in the way, not guaranteed
 
 	//intersection of relevantMinLat and the relevant longitude wise edges -> number of guaranteed edges
@@ -218,7 +223,7 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 	// maybe relevant: maxLat > node[1], minLat < node [1]
 	// ===> and one lon on left side and one lon on right side
 
-	return defRelevantEdges, maybeRelevantEdges
+	return defAboveList, maybeAboveList
 }
 
 func CalcLonDiff(lon1 float64, lon2 float64) float64 {
@@ -262,7 +267,7 @@ func BinarySearchForID(threshhold float64, list []EdgeCoordinate) int {
 	return low
 }
 
-// returns low (or high), if it returns -1 -> threshhold out of list
+// same as binary search for ID except without the return median line if median == len(list)-1
 func BinarySearchForLatID(threshhold float64, list []EdgeCoordinate) int {
 	//index of first value ABOVE threshhold
 	// println("----list search----")

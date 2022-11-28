@@ -54,9 +54,11 @@ func testPointInWater() {
 	// 	util.IsPointInWater(p, coastline)
 	// }
 
-	points, indexMatrix, pointInWaterMatrix := util.GenerateGraphPoints(500, coastline)
+	points, indexMatrix, pointInWaterMatrix := util.GenerateGraphPoints(50, coastline)
 	util.PointsToGEOJSONFile(points)
-	util.PrintEdgesToGEOJSON(util.GenerateEdges(points, indexMatrix, pointInWaterMatrix))
+	p, src, dest := util.GenerateEdges(points, indexMatrix, pointInWaterMatrix)
+	util.CalcEdgeDistances(p, src, dest)
+	util.PrintEdgesToGEOJSON(p, src, dest)
 }
 
 func startServer() {

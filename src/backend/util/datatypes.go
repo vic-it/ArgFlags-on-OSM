@@ -27,7 +27,7 @@ type way struct {
 	lastNodeID int64
 }
 
-type graph struct {
+type Graph struct {
 	// list of edges with edgeID: [firstNodeID, secondNodeID]
 	edges [][]int64
 	// list of nodes with nodeID: [longitude, latitude]

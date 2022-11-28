@@ -55,6 +55,9 @@ func GenerateGraphPoints(numberOfNodes int, coastline Coastline) ([][]float64, [
 			z := IsPointInWater(point, coastline)
 			waterLatList = append(waterLatList, z)
 			count++
+			if count%500 == 0 {
+				PrintProgress(count, numberOfNodes, "nodes")
+			}
 		}
 		isPointInWaterMatrix = append(isPointInWaterMatrix, waterLatList)
 		pointMatrix = append(pointMatrix, latList)
@@ -129,9 +132,10 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 
 func CalcEdgeDistances(points [][]float64, src []int, dest []int) []float64 {
 	var distances []float64
-	for i := 0; i < len(src); i++ {
-		distance := dist(points[src[i]], points[dest[i]])
-		//fmt.Printf("points %d - %d have a distance of %fm\n", src[i], dest[i], distance)
+	for i, d := range src {
+		distance := dist(points[d], points[dest[i]])
+		// fmt.Printf("(%f/%f) to (%f/%f)\n", points[d][0], points[d][1], points[dest[i]][0], points[dest[i]][1])
+		// fmt.Printf("points %d - %d have a distance of %.2fm\n", src[i], dest[i], distance)
 		distances = append(distances, distance)
 	}
 	return distances

@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/rand"
 	"sort"
+	"time"
 )
 
 // checks if a point, given coordinates, is on land (false) or in water (true)
@@ -39,35 +40,25 @@ func IsPointInWater(node []float64, coastline Coastline) bool {
 	return guaranteedCount%2 == 0
 }
 
+// returns the distance between two points in meters (float)
 func dist(src []float64, dest []float64) float64 {
-	const PI float64 = math.Pi
+	PI := math.Pi
 
 	srcLat := src[1]
 	srcLon := src[0]
-	destLat := src[1]
-	destLon := src[0]
+	destLat := dest[1]
+	destLon := dest[0]
+	//radius in meters
+	earthRadius := 6371000.0
+	phi1 := PI * srcLat / 180.0
+	phi2 := PI * destLat / 180.0
+	deltaPhi := PI * (srcLat - destLat) / 180.0
+	deltaLambda := PI * (srcLon - destLon) / 180.0
+	a := math.Sin(deltaPhi/2.0)*math.Sin(deltaPhi/2.0) + math.Cos(phi1)*math.Cos(phi2)*math.Sin(deltaLambda/2.0)*math.Sin(deltaLambda/2.0)
+	c := 2.0 * math.Atan2(math.Sqrt(a), math.Sqrt(1.0-a))
+	meters := earthRadius * c
 
-	radlat1 := float64(PI * srcLat / 180.0)
-	radlat2 := float64(PI * destLat / 180.0)
-
-	theta := float64(srcLon - destLon)
-	radtheta := float64(PI * theta / 180.0)
-
-	dist := math.Sin(radlat1)*math.Sin(radlat2) + math.Cos(radlat1)*math.Cos(radlat2)*math.Cos(radtheta)
-
-	if dist > 1 {
-		dist = 1
-	}
-
-	dist = math.Acos(dist)
-	dist = dist * 180 / PI
-	dist = dist * 60 * 1.1515
-
-	// K - 1.609344
-	// N -  0.8684
-
-	dist = dist * 0.8684
-	return dist
+	return meters
 }
 
 func threeD_coord(lon float64, lat float64) point_threeD {
@@ -126,7 +117,8 @@ func mergeTwoWays(startWay way, endWay way) way {
 
 func PrintProgress(current int, max int, unit string) {
 	progress := float64(current) / float64(max)
-	fmt.Printf("Generating geojson file. Progress: %2.2f%s%d%s%d %s\n\r", 100*progress, "%... - ", current, " out of ", max, unit)
+	currentTime := time.Now()
+	fmt.Printf("%s - Generating geojson file. Progress: %2.2f%s%d%s%d %s\n\r", currentTime.Format("3:04PM"), 100*progress, "%... - ", current, " out of ", max, unit)
 }
 
 func GetClosestGridNode(lon float64, lat float64) (float64, float64) {

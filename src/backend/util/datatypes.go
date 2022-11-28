@@ -28,10 +28,15 @@ type way struct {
 }
 
 type graph struct {
-	edges     [][]int64
-	points    [][]float64
-	distances []int
-	//more stuff here
+	// list of edges with edgeID: [firstNodeID, secondNodeID]
+	edges [][]int64
+	// list of nodes with nodeID: [longitude, latitude]
+	nodes [][]float64
+	// list of source nodes
+	sources []int
+	targets []int
+	weights []int
+	offsets []int
 }
 
 // like nodes, except on a globe and in actualy position/distance instead of degrees

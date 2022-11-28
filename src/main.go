@@ -48,15 +48,15 @@ func testPointInWater() {
 	path := "../../data/antarctica.osm.pbf"
 	coastline := util.GetCoastline(path)
 	//generates grid around globe
-	var testPoints [][]float64
-	testPoints = append(testPoints, []float64{-72.0000, -71.4286})
-	for _, p := range testPoints {
-		util.IsPointInWater(p, coastline)
-	}
-	//
-	//points, indexMatrix, pointInWaterMatrix := util.GenerateGraphPoints(5000, coastline)
-	//util.PointsToGEOJSONFile(points)
-	//util.PrintEdgesToGEOJSON(util.GenerateEdges(points, indexMatrix, pointInWaterMatrix))
+	// var testPoints [][]float64
+	// testPoints = append(testPoints, []float64{-180, -85.5})
+	// for _, p := range testPoints {
+	// 	util.IsPointInWater(p, coastline)
+	// }
+
+	points, indexMatrix, pointInWaterMatrix := util.GenerateGraphPoints(500, coastline)
+	util.PointsToGEOJSONFile(points)
+	util.PrintEdgesToGEOJSON(util.GenerateEdges(points, indexMatrix, pointInWaterMatrix))
 }
 
 func startServer() {

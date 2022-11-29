@@ -8,6 +8,16 @@ import (
 	"github.com/vic-it/OSM-FMI/src/backend/util"
 )
 
+var PointInWaterMatrix [][]bool
+var PointMatrix [][]int
+var NumberOfNodes int = 5000
+var Nodes [][]float64
+
+// "../../data/antarctica.osm.pbf"
+// "../../data/central-america.osm.pbf"
+// "../../data/global.sec" THIS IS THE BIG ONE FROM ILIAS (renamed, takes up ~11GB of RAM!)
+var Path string = "../../data/antarctica.osm.pbf"
+
 func fetchWorld(path string) {
 	//loads whole osm.pbf world from filepath into basic format
 	//basicWorld := util.PBFtoBASIC(path)
@@ -28,15 +38,12 @@ func fetchWorld(path string) {
 }
 
 func main() {
-	testPointInWater()
-	//start()
+	testPointInWater(NumberOfNodes)
+	start()
 }
 
 func start() {
 
-	//"../../data/antarctica.osm.pbf"
-	//"../../data/central-america.osm.pbf"
-	// "../../data/global.sec" THIS IS THE BIG ONE FROM ILIAS (renamed, takes up ~11GB of RAM!)
 	//points, indexMatrix, pointInWaterMatrix := util.GenerateGraphPoints(500, coastline)
 	//util.PointsToGEOJSONFile(points)
 	//util.PrintEdgesToGEOJSON(util.GenerateEdges(points, indexMatrix, pointInWaterMatrix))
@@ -44,9 +51,8 @@ func start() {
 	startServer()
 }
 
-func testPointInWater() {
-	path := "../../data/antarctica.osm.pbf"
-	coastline := util.GetCoastline(path)
+func testPointInWater(numOfNodes int) {
+	coastline := util.GetCoastline(Path)
 	//generates grid around globe
 	var testPoints [][]float64
 	testPoints = append(testPoints, []float64{-180, -85.5})
@@ -56,9 +62,11 @@ func testPointInWater() {
 	for _, p := range testPoints {
 		util.IsPointInWater(p, coastline)
 	}
-
-	// points, indexMatrix, pointInWaterMatrix := util.GenerateGraphPoints(5000, coastline)
-	// util.PointsToGEOJSONFile(points)
+	points, indexMatrix, pointInWaterMatrix := util.GenerateGraphPoints(numOfNodes, coastline)
+	PointMatrix = indexMatrix
+	PointInWaterMatrix = pointInWaterMatrix
+	Nodes = points
+	util.PointsToGEOJSONFile(points)
 	// p, src, dest := util.GenerateEdges(points, indexMatrix, pointInWaterMatrix)
 	// util.CalcEdgeDistances(p, src, dest)
 	// util.PrintEdgesToGEOJSON(p, src, dest)
@@ -72,6 +80,13 @@ func startServer() {
 }
 
 func getPointHandler() http.HandlerFunc {
+	if len(PointInWaterMatrix) < 1 {
+		coastline := util.GetCoastline(Path)
+		nodes, indexMatrix, pointInWaterMatrix := util.GenerateGraphPoints(NumberOfNodes, coastline)
+		PointInWaterMatrix = pointInWaterMatrix
+		PointMatrix = indexMatrix
+		Nodes = nodes
+	}
 	pointHandler := func(writer http.ResponseWriter, request *http.Request) {
 		urlQuery := request.URL.Query()
 		inputLon, _ := strconv.ParseFloat(urlQuery["lon"][0], 64)
@@ -81,9 +96,9 @@ func getPointHandler() http.HandlerFunc {
 		fmt.Printf("click lat: %f\n", inputLat)
 
 		//TODO GET CLOSEST POINT HERE
-		lon, lat := util.GetClosestGridNode(inputLon, inputLat)
+		nodeID := util.GetClosestGridNode(inputLon, inputLat, PointMatrix, PointInWaterMatrix, NumberOfNodes, Nodes)
 
-		outputString := fmt.Sprintf("%fx%f", lon, lat)
+		outputString := fmt.Sprintf("%fx%f", Nodes[nodeID][0], Nodes[nodeID][1])
 		writer.WriteHeader(http.StatusOK)
 		writer.Write([]byte(outputString))
 	}

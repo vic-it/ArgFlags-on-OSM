@@ -121,8 +121,86 @@ func PrintProgress(current int, max int, unit string) {
 	fmt.Printf("%s - Generating geojson file. Progress: %2.2f%s%d%s%d %s\n\r", currentTime.Format("3:04PM"), 100*progress, "%... - ", current, " out of ", max, unit)
 }
 
-func GetClosestGridNode(lon float64, lat float64) (float64, float64) {
-	return lon, lat
+func GetClosestGridNode(lon float64, lat float64, pointMatrix [][]int, waterLatList [][]bool, numOfNodes int, nodes [][]float64) int {
+	pi := math.Pi
+	// mirror variables in GenerateGraphPoints()
+	a := 4.0 * pi / float64(numOfNodes)
+	d := math.Sqrt(a)
+	Mv := math.Round(pi / d)
+	dv := pi / Mv
+	dp := a / dv
+	//get radians
+	p, v := DegToRad(lon, lat)
+	// derive from v := pi * (m + 0.5) / Mv
+	// v * Mv / pi = m + 0.5
+	m := (v * Mv / pi) - 0.5
+	startingLatPos := int(math.Round(m))
+	Mp := math.Round(2.0 * pi * math.Sin(v) / dp)
+	// p := 2.0 * pi * n / Mp
+	n := p * Mp / (2.0 * pi)
+	startingLon := int(math.Round(n))
+	//lonPos :=
+	return getClosestValidNode(startingLatPos, startingLon, pointMatrix, waterLatList, nodes)
+}
+
+// FIFO breadth search for nearest node that is in water
+func getClosestValidNode(startingLat int, startingLon int, pointMatrix [][]int, waterLatList [][]bool, nodes [][]float64) int {
+	startingLat = (startingLat + (5 * len(pointMatrix))) % len(pointMatrix)
+	startingLon = (startingLon + (5 * len(pointMatrix[startingLat]))) % len(pointMatrix[startingLat])
+
+	hasBeenChecked := make(map[int]bool)
+	nodesToCheck := [][]int{{startingLat, startingLon}}
+	currentIndex := 0
+	for {
+		curLat := nodesToCheck[currentIndex][0]
+		curLon := nodesToCheck[currentIndex][1]
+		hasBeenChecked[pointMatrix[curLat][curLon]] = true
+		// fmt.Printf("start: [%d,%d] - checking: [%d, %d]...\n", startingLat, startingLon, curLat, curLon)
+		if waterLatList[curLat][curLon] {
+			// println("is in water\n---")
+			return pointMatrix[curLat][curLon]
+		}
+		// println("is not in water\n---")
+		currentIndex++
+		nodesToCheck = append(nodesToCheck, getNeighbors(curLat, curLon, pointMatrix, hasBeenChecked)...)
+	}
+}
+
+func getNeighbors(lat int, lon int, pointMatrix [][]int, hasBeenChecked map[int]bool) [][]int {
+	var neighborList [][]int
+	//add left node to check
+	if lon == 0 {
+		neighborList = append(neighborList, []int{lat, len(pointMatrix[lat]) - 1})
+	} else {
+		neighborList = append(neighborList, []int{lat, lon - 1})
+	}
+	//add right node to check
+	if lon == len(pointMatrix[lat])-1 {
+		neighborList = append(neighborList, []int{lat, 0})
+	} else {
+		neighborList = append(neighborList, []int{lat, lon + 1})
+	}
+	//add below node to check
+	if lat != 0 {
+		position := int(math.Round(float64(lon * len(pointMatrix[lat-1]) / len(pointMatrix[lat]))))
+		neighborList = append(neighborList, []int{lat - 1, position})
+
+	}
+	//add above node to check
+	if lat != len(pointMatrix)-1 {
+		position := int(math.Round(float64(lon * len(pointMatrix[lat+1]) / len(pointMatrix[lat]))))
+		neighborList = append(neighborList, []int{lat + 1, position})
+	}
+	//delete all already checked edges
+	for i, n := range neighborList {
+		if hasBeenChecked[pointMatrix[n[0]][n[1]]] {
+			x := neighborList[:i]
+			if i <= len(neighborList)-2 {
+				neighborList = append(x, neighborList[i+1:]...)
+			}
+		}
+	}
+	return neighborList
 }
 
 func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
@@ -132,7 +210,7 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 	edges := coastline.Edges
 	sortedLonList := coastline.SortedLonEdgeList
 	maxLonDiff := coastline.MaxLonDiff
-	fmt.Printf("sorted lon total: %d\n", len(sortedLonList))
+	// fmt.Printf("sorted lon total: %d\n", len(sortedLonList))
 	//regular case
 	if math.Abs(node[0])+maxLonDiff < 180 {
 		// left side: lon-maxdiff to lon
@@ -176,11 +254,11 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 		rightList = sortedLonList[rawRightStart:rawRightEnd]
 	}
 
-	fmt.Printf("leftlist: %d\n", len(leftList))
-	fmt.Printf("rightlist: %d\n", len(rightList))
+	// fmt.Printf("leftlist: %d\n", len(leftList))
+	// fmt.Printf("rightlist: %d\n", len(rightList))
 	relevantLonEdges := mergeEdgeCoordinateLists(leftList, rightList)
 
-	fmt.Printf("relevant lon total: %d\n------\n", len(relevantLonEdges))
+	// fmt.Printf("relevant lon total: %d\n------\n", len(relevantLonEdges))
 	// generate lat list out of longitude-relevant edges
 	var maxLatList []EdgeCoordinate
 	var minLatList []EdgeCoordinate
@@ -232,6 +310,20 @@ func CalcLonDiff(lon1 float64, lon2 float64) float64 {
 		return 360.0 - abs
 	}
 	return abs
+}
+
+// theta -> lat and phi -> lon
+func RadToDeg(phi float64, theta float64) (float64, float64) {
+	lon := (360.0 * phi / (math.Pi * 2.0)) - 180.0
+	lat := (theta * 180.0 / math.Pi) - 90.0
+	return lon, lat
+}
+
+// lon -> phi and lat -> theta
+func DegToRad(lon float64, lat float64) (float64, float64) {
+	phi := (lon + 180.0) * (math.Pi * 2.0) / 360
+	theta := (lat + 90) * math.Pi / 180
+	return phi, theta
 }
 
 // returns low (or high), if it returns -1 -> threshhold out of list

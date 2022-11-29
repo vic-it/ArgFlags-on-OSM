@@ -47,7 +47,7 @@ func GenerateGraphPoints(numberOfNodes int, coastline Coastline) ([][]float64, [
 			var point []float64
 			// p -> lon
 			// v -> lat
-			lon, lat := radToDeg(v, p)
+			lon, lat := RadToDeg(p, v)
 			point = append(point, lon)
 			point = append(point, lat)
 			points = append(points, point)
@@ -66,12 +66,6 @@ func GenerateGraphPoints(numberOfNodes int, coastline Coastline) ([][]float64, [
 	endTime := time.Now()
 	println(int(endTime.Sub(startTime).Seconds()))
 	return points, pointMatrix, isPointInWaterMatrix
-}
-
-func radToDeg(theta float64, phi float64) (float64, float64) {
-	lon := (360.0 * phi / (math.Pi * 2.0)) - 180.0
-	lat := (theta * 180.0 / math.Pi) - 90.0
-	return lon, lat
 }
 
 func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix [][]bool) ([][]float64, []int, []int) {

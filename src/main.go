@@ -103,7 +103,7 @@ func analyzeDirectory(basePath string) {
 func createGraph(pathToCoastlinesPBF string, numberOfNodes int) {
 	graph = util.Graph{}
 	runtime.GC()
-	graph = util.GenerateGraphPoints(numberOfNodes, util.GetCoastline(pathToCoastlinesPBF))
+	graph = util.GenerateGraph(numberOfNodes, util.GetCoastline(pathToCoastlinesPBF))
 }
 
 func readGraphFromFMI(path string) {
@@ -130,9 +130,7 @@ func randomTestFunction(numOfNodes int) {
 	for _, p := range testPoints {
 		util.IsPointInWater(p, coastline)
 	}
-	graph = util.GenerateGraphPoints(numOfNodes, coastline)
+	graph = util.GenerateGraph(numOfNodes, coastline)
 	util.PrintPointsToGEOJSON(graph.Nodes)
-	// p, src, dest := util.GenerateEdges(points, indexMatrix, pointInWaterMatrix)
-	// util.CalcEdgeDistances(p, src, dest)
-	// util.PrintEdgesToGEOJSON(p, src, dest)
+	util.PrintEdgesToGEOJSON(graph)
 }

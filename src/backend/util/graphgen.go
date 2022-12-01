@@ -6,7 +6,7 @@ import (
 )
 
 // math from here https://www.cmu.edu/biolphys/deserno/pdf/sphere_equi.pdf
-func GenerateGraphPoints(numberOfNodes int, coastline Coastline) Graph {
+func GenerateGraph(numberOfNodes int, coastline Coastline) Graph {
 	println("generating points...")
 	// simple list of all points
 	var points [][]float64
@@ -59,7 +59,7 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 	var edgeSource []int
 	var edgeDest []int
 	var offsetList []int
-	var distanceList []float64
+	var distanceList []int
 
 	for y := 0; y < len(indexMatrix); y++ {
 		latList := indexMatrix[y]
@@ -114,12 +114,10 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 	return Graph{Nodes: points, Sources: edgeSource, Targets: edgeDest, Weights: distanceList, Offsets: offsetList, NodeMatrix: indexMatrix, NodeInWaterMatrix: pointsInWaterMatrix, NumOfNodes: numOfNodes}
 }
 
-func CalcEdgeDistances(points [][]float64, src []int, dest []int) []float64 {
-	var distances []float64
+func CalcEdgeDistances(points [][]float64, src []int, dest []int) []int {
+	var distances []int
 	for i, d := range src {
-		distance := dist(points[d], points[dest[i]])
-		// fmt.Printf("(%f/%f) to (%f/%f)\n", points[d][0], points[d][1], points[dest[i]][0], points[dest[i]][1])
-		// fmt.Printf("points %d - %d have a distance of %.2fm\n", src[i], dest[i], distance)
+		distance := int(dist(points[d], points[dest[i]]))
 		distances = append(distances, distance)
 	}
 	return distances

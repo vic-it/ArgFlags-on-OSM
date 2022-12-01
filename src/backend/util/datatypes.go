@@ -35,7 +35,7 @@ type Graph struct {
 	// list of edge destinations
 	Targets []int
 	// distances of edges
-	Weights []float64
+	Weights []int
 	//offset for when edges for another node start
 	Offsets []int
 	// 2D matrix of nodes on the grid with the respective node IDs
@@ -45,8 +45,6 @@ type Graph struct {
 	//number of nodes intended to create - usually close to len[nodes] but a bit higher
 	NumOfNodes int
 }
-
-
 
 type Coastline struct {
 	Nodes             map[int64][]float64

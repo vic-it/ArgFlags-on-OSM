@@ -79,7 +79,10 @@ func PrintPointsToGEOJSON(points [][]float64) {
 	rawJSON = nil
 }
 
-func PrintEdgesToGEOJSON(points [][]float64, src []int, dest []int) {
+func PrintEdgesToGEOJSON(graph Graph) {
+	points := graph.Nodes
+	src := graph.Sources
+	dest := graph.Targets
 	var lineList [][][]float64
 	for i := 0; i < len(src); i++ {
 		line := [][]float64{points[src[i]], points[dest[i]]}

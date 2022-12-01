@@ -3,7 +3,6 @@ package util
 import (
 	"fmt"
 	"math"
-	"math/rand"
 	"sort"
 	"time"
 )
@@ -61,23 +60,24 @@ func dist(src []float64, dest []float64) float64 {
 	return meters
 }
 
-func threeD_coord(lon float64, lat float64) point_threeD {
-	rad := float64(6378137.0)
-	// Radius of the Earth (in meters)
-	cosLat := math.Cos(lat)
-	sinLat := math.Sin(lat)
-	cosLon := math.Cos(lon)
-	sinLon := math.Sin(lon)
+// transforms longitude and latitude into 3D coordinates
+// func threeD_coord(lon float64, lat float64) point_threeD {
+// 	rad := float64(6378137.0)
+// 	// Radius of the Earth (in meters)
+// 	cosLat := math.Cos(lat)
+// 	sinLat := math.Sin(lat)
+// 	cosLon := math.Cos(lon)
+// 	sinLon := math.Sin(lon)
 
-	x := rad * cosLon * sinLat
-	y := rad * sinLon * sinLat
-	z := rad * cosLat
+// 	x := rad * cosLon * sinLat
+// 	y := rad * sinLon * sinLat
+// 	z := rad * cosLat
 
-	anspoint := point_threeD{x, y, z}
+// 	anspoint := point_threeD{x, y, z}
 
-	return anspoint
+// 	return anspoint
 
-}
+// }
 
 // return 1 if edge is in the way, 0 else
 func isEdgeInTheWay(p []float64, e [][]float64) int {
@@ -115,16 +115,18 @@ func mergeTwoWays(startWay way, endWay way) way {
 	return newWay
 }
 
+// simple function used to print progress into console with current value out of maximum value and a unit
 func PrintProgress(current int, max int, unit string) {
 	progress := float64(current) / float64(max)
 	currentTime := time.Now()
 	fmt.Printf("%s - Generating geojson file. Progress: %2.2f%s%d%s%d %s\n\r", currentTime.Format("3:04PM"), 100*progress, "%... - ", current, " out of ", max, unit)
 }
 
-func GetClosestGridNode(lon float64, lat float64, pointMatrix [][]int, waterLatList [][]bool, numOfNodes int, nodes [][]float64) int {
+// for input coordinates: estimate position of closest node on the grid, then breadth search until it finds a node that is on the grid and in water
+func GetClosestGridNode(lon float64, lat float64, graph Graph) int {
 	pi := math.Pi
 	// mirror variables in GenerateGraphPoints()
-	a := 4.0 * pi / float64(numOfNodes)
+	a := 4.0 * pi / float64(graph.NumOfNodes)
 	d := math.Sqrt(a)
 	Mv := math.Round(pi / d)
 	dv := pi / Mv
@@ -140,11 +142,13 @@ func GetClosestGridNode(lon float64, lat float64, pointMatrix [][]int, waterLatL
 	n := p * Mp / (2.0 * pi)
 	startingLon := int(math.Round(n))
 	//lonPos :=
-	return getClosestValidNode(startingLatPos, startingLon, pointMatrix, waterLatList, nodes)
+	return getClosestValidNode(startingLatPos, startingLon, graph)
 }
 
 // FIFO breadth search for nearest node that is in water
-func getClosestValidNode(startingLat int, startingLon int, pointMatrix [][]int, waterLatList [][]bool, nodes [][]float64) int {
+func getClosestValidNode(startingLat int, startingLon int, graph Graph) int {
+	pointMatrix := graph.NodeMatrix
+	nodeInWaterList := graph.NodeInWaterMatrix
 	startingLat = (startingLat + (5 * len(pointMatrix))) % len(pointMatrix)
 	startingLon = (startingLon + (5 * len(pointMatrix[startingLat]))) % len(pointMatrix[startingLat])
 
@@ -155,17 +159,15 @@ func getClosestValidNode(startingLat int, startingLon int, pointMatrix [][]int, 
 		curLat := nodesToCheck[currentIndex][0]
 		curLon := nodesToCheck[currentIndex][1]
 		hasBeenChecked[pointMatrix[curLat][curLon]] = true
-		// fmt.Printf("start: [%d,%d] - checking: [%d, %d]...\n", startingLat, startingLon, curLat, curLon)
-		if waterLatList[curLat][curLon] {
-			// println("is in water\n---")
+		if nodeInWaterList[curLat][curLon] {
 			return pointMatrix[curLat][curLon]
 		}
-		// println("is not in water\n---")
 		currentIndex++
 		nodesToCheck = append(nodesToCheck, getNeighbors(curLat, curLon, pointMatrix, hasBeenChecked)...)
 	}
 }
 
+// returns a list of neighbor points of an input point
 func getNeighbors(lat int, lon int, pointMatrix [][]int, hasBeenChecked map[int]bool) [][]int {
 	var neighborList [][]int
 	//add left node to check
@@ -203,15 +205,21 @@ func getNeighbors(lat int, lon int, pointMatrix [][]int, hasBeenChecked map[int]
 	return neighborList
 }
 
+// computes all edges which are relevant for the point in polygon test (e.g. only points within a certain longitude range)
 func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
+	//list of edges with at least one point on the left side
 	var leftList []EdgeCoordinate
+	//list of edges with at least  one point on the right side
 	var rightList []EdgeCoordinate
+	//coordinates of the nodes in the edges
 	nodes := coastline.Nodes
+	//IDs of the nodes (coordinates) of the edges
 	edges := coastline.Edges
+	//all points sorted by longitude, stored together with the ID of the respective edge
 	sortedLonList := coastline.SortedLonEdgeList
+	//maximum longitude difference between two points of the same edge
 	maxLonDiff := coastline.MaxLonDiff
-	// fmt.Printf("sorted lon total: %d\n", len(sortedLonList))
-	//regular case
+	//get relevant longitudes when point to check is not close to 180°/-180° longitude
 	if math.Abs(node[0])+maxLonDiff < 180 {
 		// left side: lon-maxdiff to lon
 		rawLeftStart := BinarySearchForID(node[0]-maxLonDiff, sortedLonList)
@@ -222,7 +230,7 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 		// make slices
 		leftList = sortedLonList[rawLeftStart:rawLeftEnd]
 		rightList = sortedLonList[rawRightStart:rawRightEnd]
-		//case we are too close to 180, coming from left side
+		//case we are too close to 180°, coming from left side
 	} else if node[0]+maxLonDiff >= 180 {
 		// left side from lon-maxdiff to node
 		rawLeftStart := BinarySearchForID(node[0]-maxLonDiff, sortedLonList)
@@ -237,7 +245,7 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 		leftList = sortedLonList[rawLeftStart:rawLeftEnd]
 		rightList = sortedLonList[rawRightStart1:rawRightEnd1]
 		rightList = append(rightList, sortedLonList[rawRightStart2:rawRightEnd2]...)
-		//case we are too close to -180 coming from right side
+		//case we are too close to -180° coming from right side
 	} else {
 		// left side from -180 to lon
 		rawLeftStart1 := BinarySearchForID(-180, sortedLonList)
@@ -253,13 +261,7 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 		leftList = append(leftList, sortedLonList[rawLeftStart2:rawLeftEnd2]...)
 		rightList = sortedLonList[rawRightStart:rawRightEnd]
 	}
-
-	// fmt.Printf("leftlist: %d\n", len(leftList))
-	// fmt.Printf("rightlist: %d\n", len(rightList))
-	relevantLonEdges := mergeEdgeCoordinateLists(leftList, rightList)
-
-	// fmt.Printf("relevant lon total: %d\n------\n", len(relevantLonEdges))
-	// generate lat list out of longitude-relevant edges
+	relevantLonEdges := edgeIntersectionOfCoordinatesIntoIDs(leftList, rightList)
 	var maxLatList []EdgeCoordinate
 	var minLatList []EdgeCoordinate
 	for _, index := range relevantLonEdges {
@@ -271,7 +273,7 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 	sort.Sort(ByCoordinate(minLatList))
 
 	//compute relevant latitudes
-	//uses other binary search function because here boundaries need to be exact!
+	//uses other binary search function for lat because here boundaries need to be exact!
 	idOfBiggerThanMaxLat := BinarySearchForLatID(node[1], maxLatList)
 	idOfBiggerThanMinLat := BinarySearchForLatID(node[1], minLatList)
 	relevantMaxLat := []EdgeCoordinate{}
@@ -292,18 +294,10 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 	if len(relevantMinLat) != len(relevantMaxLat) {
 		maybeAboveList = secondListMinusFirstList(relevantMinLat, relevantMaxLat)
 	}
-	// maybeRelevantEdges := mergeIDLists(edgesWhereOnePointIsBelow, relevantLonEdges)
-	//get list of edges _maybe_ in the way, not guaranteed
-
-	//intersection of relevantMinLat and the relevant longitude wise edges -> number of guaranteed edges
-	//intersection of relevantMaxLat and the relevant longitude wise edges -> list of maybe in the way edges +  guaranteed in the way edges
-
-	// maybe relevant: maxLat > node[1], minLat < node [1]
-	// ===> and one lon on left side and one lon on right side
-
 	return defAboveList, maybeAboveList
 }
 
+// calculates the longitude differences on a sphere between two points
 func CalcLonDiff(lon1 float64, lon2 float64) float64 {
 	abs := math.Abs(lon1 - lon2)
 	if abs > 180.0 {
@@ -312,21 +306,21 @@ func CalcLonDiff(lon1 float64, lon2 float64) float64 {
 	return abs
 }
 
-// theta -> lat and phi -> lon
+// converts an input node (lon/lat) from degrees to radians (lat  theta, lon - phi)
 func RadToDeg(phi float64, theta float64) (float64, float64) {
 	lon := (360.0 * phi / (math.Pi * 2.0)) - 180.0
 	lat := (theta * 180.0 / math.Pi) - 90.0
 	return lon, lat
 }
 
-// lon -> phi and lat -> theta
+// converts an input node (lon/lat) from degrees to radians (lat  theta, lon - phi)
 func DegToRad(lon float64, lat float64) (float64, float64) {
 	phi := (lon + 180.0) * (math.Pi * 2.0) / 360
 	theta := (lat + 90) * math.Pi / 180
 	return phi, theta
 }
 
-// returns low (or high), if it returns -1 -> threshhold out of list
+// returns index of first element above the threshold via binary search
 func BinarySearchForID(threshhold float64, list []EdgeCoordinate) int {
 	//index of first value ABOVE threshhold
 	low := 0
@@ -348,25 +342,15 @@ func BinarySearchForID(threshhold float64, list []EdgeCoordinate) int {
 			high = median - 1
 		}
 		if high < 0 || low < 0 || high > len(list)-1 || low > len(list)-1 {
-			//println("threshhold is out of list bounds")
+			//threshhold is out of list bounds
 			return -1
 		}
-		//fmt.Printf("threshhold: %f\nvalue at low(%d): %f\nvalue at high(%d): %f\n", threshhold, low, list[low].coordinate, high, list[high].coordinate)
-		//10° -> 175 -> left side in 165-175, right side 175-180 and -180 to -175
-		//10° -> 135 -> left side in 125-135, right side 135-145
 	}
-	//fmt.Printf("index of list: %d - list size: %d elements\n", low, len(list))
 	return low
 }
 
 // same as binary search for ID except without the return median line if median == len(list)-1
 func BinarySearchForLatID(threshhold float64, list []EdgeCoordinate) int {
-	//index of first value ABOVE threshhold
-	// println("----list search----")
-	// fmt.Printf("threshhold: %f\n", threshhold)
-	// for i, e := range list {
-	// 	fmt.Printf("index: %d --- coordinate: %f\n", i, e.coordinate)
-	// }
 	low := 0
 	//index of first value BELOW threshhold
 	high := len(list) - 1
@@ -384,18 +368,15 @@ func BinarySearchForLatID(threshhold float64, list []EdgeCoordinate) int {
 			high = median - 1
 		}
 		if high < 0 || low < 0 || high > len(list)-1 || low > len(list)-1 {
-			// println("threshhold is out of list bounds")
+			//threshhold out of bounds
 			return -1
 		}
-		//fmt.Printf("threshhold: %f\nvalue at low(%d): %f\nvalue at high(%d): %f\n", threshhold, low, list[low].coordinate, high, list[high].coordinate)
-		//10° -> 175 -> left side in 165-175, right side 175-180 and -180 to -175
-		//10° -> 135 -> left side in 125-135, right side 135-145
 	}
-	//fmt.Printf("index of list: %d - list size: %d elements\n", low, len(list))
 	return low
 }
 
-func mergeEdgeCoordinateLists(l1 []EdgeCoordinate, l2 []EdgeCoordinate) []int {
+// takes two lists of edge coordinate objects and gives back the intersection as an ID list
+func edgeIntersectionOfCoordinatesIntoIDs(l1 []EdgeCoordinate, l2 []EdgeCoordinate) []int {
 	m := make(map[int]bool)
 	var c []int
 
@@ -411,7 +392,8 @@ func mergeEdgeCoordinateLists(l1 []EdgeCoordinate, l2 []EdgeCoordinate) []int {
 	return c
 }
 
-func mergeIDLists(l1 []int, l2 []int) []int {
+// takes two lists of edge ID's and gives back the intersection
+func edgeIntersectionOfIDs(l1 []int, l2 []int) []int {
 	m := make(map[int]bool)
 	var c []int
 
@@ -427,6 +409,7 @@ func mergeIDLists(l1 []int, l2 []int) []int {
 	return c
 }
 
+// gives back an array of integers which are the IDs of the edges of the 2nd list, which dont appear in the first list
 func secondListMinusFirstList(l1 []EdgeCoordinate, l2 []EdgeCoordinate) []int {
 	m := make(map[int]bool)
 	var c []int
@@ -443,23 +426,15 @@ func secondListMinusFirstList(l1 []EdgeCoordinate, l2 []EdgeCoordinate) []int {
 	return c
 }
 
-func Quicksort(a []EdgeCoordinate) []EdgeCoordinate {
-	if len(a) < 2 {
-		return a
-	}
+// stuff for sorting algorithm
+type ByCoordinate []EdgeCoordinate
 
-	left, right := 0, len(a)-1
-	center := rand.Int() % len(a)
-
-	a[center], a[right] = a[right], a[center]
-	for i, _ := range a {
-		if a[i].coordinate < a[right].coordinate {
-			a[left], a[i] = a[i], a[left]
-			left++
-		}
-	}
-	a[left], a[right] = a[right], a[left]
-	Quicksort(a[:left])
-	Quicksort(a[left+1:])
-	return a
+func (a ByCoordinate) Len() int {
+	return len(a)
+}
+func (a ByCoordinate) Less(i, j int) bool {
+	return a[i].coordinate < a[j].coordinate
+}
+func (a ByCoordinate) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
 }

@@ -3,24 +3,11 @@ package util
 import (
 	"fmt"
 	"math"
-	"time"
 )
 
-// transforms a node into a point (x,y) coordinates w.r.t meters
-func NodeToPoint(n node) point {
-	return point{}
-}
-
-// transforms a point (x,y) into a node (lat,lon) w.r.t degrees
-// not sure if we need this
-func PointToNode(p point) node {
-	return node{}
-}
-
 // math from here https://www.cmu.edu/biolphys/deserno/pdf/sphere_equi.pdf
-func GenerateGraphPoints(numberOfNodes int, coastline Coastline) ([][]float64, [][]int, [][]bool) {
+func GenerateGraphPoints(numberOfNodes int, coastline Coastline) Graph {
 	println("generating points...")
-	startTime := time.Now()
 	// simple list of all points
 	var points [][]float64
 	//list but as 2d-ish grid for edge creation -> with index of points in "points[]"
@@ -63,15 +50,16 @@ func GenerateGraphPoints(numberOfNodes int, coastline Coastline) ([][]float64, [
 		pointMatrix = append(pointMatrix, latList)
 	}
 	fmt.Printf("%d points created\n", count)
-	endTime := time.Now()
-	println(int(endTime.Sub(startTime).Seconds()))
-	return points, pointMatrix, isPointInWaterMatrix
+
+	return GenerateEdges(points, pointMatrix, isPointInWaterMatrix, numberOfNodes)
 }
 
-func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix [][]bool) ([][]float64, []int, []int) {
+func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix [][]bool, numOfNodes int) Graph {
 	println("creating edges from points...")
 	var edgeSource []int
 	var edgeDest []int
+	var offsetList []int
+	var distanceList []float64
 
 	for y := 0; y < len(indexMatrix); y++ {
 		latList := indexMatrix[y]
@@ -120,8 +108,10 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 			}
 		}
 	}
+	distanceList = CalcEdgeDistances(points, edgeSource, edgeDest)
 	fmt.Printf("%d edges generated", len(edgeDest))
-	return points, edgeSource, edgeDest
+
+	return Graph{Nodes: points, Sources: edgeSource, Targets: edgeDest, Weights: distanceList, Offsets: offsetList, NodeMatrix: indexMatrix, NodeInWaterMatrix: pointsInWaterMatrix, NumOfNodes: numOfNodes}
 }
 
 func CalcEdgeDistances(points [][]float64, src []int, dest []int) []float64 {

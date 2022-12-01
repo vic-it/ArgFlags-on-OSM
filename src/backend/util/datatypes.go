@@ -28,35 +28,25 @@ type way struct {
 }
 
 type Graph struct {
-	// list of edges with edgeID: [firstNodeID, secondNodeID]
-	edges [][]int64
-	// list of nodes with nodeID: [longitude, latitude]
-	nodes [][]float64
+	// list of Nodes with nodeID: [longitude, latitude]
+	Nodes [][]float64
 	// list of source nodes
-	sources []int
-	targets []int
-	weights []int
-	offsets []int
+	Sources []int
+	// list of edge destinations
+	Targets []int
+	// distances of edges
+	Weights []float64
+	//offset for when edges for another node start
+	Offsets []int
+	// 2D matrix of nodes on the grid with the respective node IDs
+	NodeMatrix [][]int
+	// respective 2D matrix for the "PointMatrix" but instead of IDs it stores whether the node is in water or on land
+	NodeInWaterMatrix [][]bool
+	//number of nodes intended to create - usually close to len[nodes] but a bit higher
+	NumOfNodes int
 }
 
-// like nodes, except on a globe and in actualy position/distance instead of degrees
-type point struct {
-	x float64
-	y float64
-}
 
-type point_threeD struct {
-	x float64
-	y float64
-	z float64
-}
-
-// one edge of a multi-edge polygon (= way)
-type edge struct {
-	start  float64
-	end    float64
-	length float64
-}
 
 type Coastline struct {
 	Nodes             map[int64][]float64

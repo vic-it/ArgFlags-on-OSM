@@ -48,26 +48,22 @@ function routeHandler(){
         distCoords = result.split("y")
         if (+distCoords[0] <0){
             console.log("NO PATH FOUND!")
+            document.getElementById("distance").value = "NO PATH FOUND"
         } else{
             distance = +distCoords[0]
             rawCoordinates = distCoords[1].split("x")
             var coordinates = [];
-            for (const coord in rawCoordinates) {
-                lat = +coord.split(z)[1]
-                lon = +coord.split(z)[0]
-                coordinates.append([lat, lon])
+            for (var coord of rawCoordinates) {
+                c = coord.split("z")
+                lat = +c[1]
+                lon = +c[0]
+                coordinates.push([lat, lon])
             }
             
             document.getElementById("distance").value = ""+distance+"m"
             addRoute(coordinates)
             console.log("Path found with distance: "+distance+"m")
         }
-        //0 lon, 1 lat, the + before the coordinates casts the string valued coordinates into number values
-        //i hate javascript
-        
-        console.log("closest grid point (lon/lat): \n["+coordinates[0]+", "+coordinates[1]+"] id = "+coordinates[2])
-        console.log("-----------------")
-        addMarker(+coordinates[0],+coordinates[1], +coordinates[2])
     })
 }
 

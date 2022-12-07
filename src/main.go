@@ -14,7 +14,7 @@ var graph util.Graph
 
 func main() {
 	println("\nStart!")
-	randomTestFunction(100000)
+	randomTestFunction(10000)
 	startServer()
 }
 
@@ -55,11 +55,22 @@ func getRouteHandler() http.HandlerFunc {
 		fmt.Printf("source node ID: %d\n", src)
 		fmt.Printf("destination node ID: %d\n--\n", dest)
 
-		outputString := "lol hier text"
 		writer.WriteHeader(http.StatusOK)
-		writer.Write([]byte(outputString))
+		//calc route below
+		writer.Write([]byte(getRouteString(src, dest)))
 	}
 	return routingHandler
+}
+
+// should return a string in the following format:
+// if no route found -> -1y0
+// if route found -> distanceylon1zlat1xlon2zlat2x...
+func getRouteString(src int64, dest int64) string {
+	//testString success
+	//succ := "64251y12z15x37z45x-15z-80"
+	//testString failure
+	fail := "-1y0"
+	return fail
 }
 
 func getPreprocessingHandler() http.HandlerFunc {

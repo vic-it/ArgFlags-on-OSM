@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"math"
+	"runtime"
 	"sort"
 	"time"
 )
@@ -119,7 +120,7 @@ func mergeTwoWays(startWay way, endWay way) way {
 func PrintProgress(current int, max int, unit string) {
 	progress := float64(current) / float64(max)
 	currentTime := time.Now()
-	fmt.Printf("%s - Generating geojson file. Progress: %2.2f%s%d%s%d %s\n\r", currentTime.Format("3:04PM"), 100*progress, "%... - ", current, " out of ", max, unit)
+	fmt.Printf("%s - Water-checking nodes |  Progress: %2.2f%s%d%s%d %s\n\r", currentTime.Format("3:04PM"), 100*progress, "% - ", current, " out of ", max, unit)
 }
 
 // for input coordinates: estimate position of closest node on the grid, then breadth search until it finds a node that is on the grid and in water
@@ -158,8 +159,10 @@ func getClosestValidNode(startingLat int, startingLon int, graph Graph) int {
 	for {
 		curLat := nodesToCheck[currentIndex][0]
 		curLon := nodesToCheck[currentIndex][1]
-		hasBeenChecked[pointMatrix[curLat][curLon]] = true
 		if nodeInWaterList[curLat][curLon] {
+			fmt.Printf("Nodes checked until valid node found: %d - with list length: %d\n---\n", currentIndex+1, len(nodesToCheck))
+			hasBeenChecked = map[int]bool{}
+			runtime.GC()
 			return pointMatrix[curLat][curLon]
 		}
 		currentIndex++
@@ -170,43 +173,52 @@ func getClosestValidNode(startingLat int, startingLon int, graph Graph) int {
 // returns a list of neighbor points of an input point
 func getNeighbors(lat int, lon int, pointMatrix [][]int, hasBeenChecked map[int]bool) [][]int {
 	var neighborList [][]int
-	//add left node to check
-	if lon == 0 {
-		neighborList = append(neighborList, []int{lat, len(pointMatrix[lat]) - 1})
-	} else {
-		neighborList = append(neighborList, []int{lat, lon - 1})
-	}
-	//add right node to check
-	if lon == len(pointMatrix[lat])-1 {
-		neighborList = append(neighborList, []int{lat, 0})
-	} else {
-		neighborList = append(neighborList, []int{lat, lon + 1})
+
+	//add above node to check
+	if lat != len(pointMatrix)-1 {
+		position := int(math.Round(float64(lon * len(pointMatrix[lat+1]) / len(pointMatrix[lat]))))
+		if !hasBeenChecked[pointMatrix[lat+1][position]] {
+			neighborList = append(neighborList, []int{lat + 1, position})
+		}
 	}
 	//add below node to check
 	if lat != 0 {
 		position := int(math.Round(float64(lon * len(pointMatrix[lat-1]) / len(pointMatrix[lat]))))
-		neighborList = append(neighborList, []int{lat - 1, position})
-
-	}
-	//add above node to check
-	if lat != len(pointMatrix)-1 {
-		position := int(math.Round(float64(lon * len(pointMatrix[lat+1]) / len(pointMatrix[lat]))))
-		neighborList = append(neighborList, []int{lat + 1, position})
-	}
-	//delete all already checked edges
-	for i, n := range neighborList {
-		if hasBeenChecked[pointMatrix[n[0]][n[1]]] {
-			x := neighborList[:i]
-			if i <= len(neighborList)-2 {
-				neighborList = append(x, neighborList[i+1:]...)
-			}
+		if !hasBeenChecked[pointMatrix[lat-1][position]] {
+			neighborList = append(neighborList, []int{lat - 1, position})
 		}
+	}
+	//add left node to check
+	if lon == 0 {
+		if !hasBeenChecked[pointMatrix[lat][len(pointMatrix[lat])-1]] {
+			neighborList = append(neighborList, []int{lat, len(pointMatrix[lat]) - 1})
+		}
+	} else {
+		if !hasBeenChecked[pointMatrix[lat][lon-1]] {
+			neighborList = append(neighborList, []int{lat, lon - 1})
+		}
+	}
+	//add right node to check
+	if lon == len(pointMatrix[lat])-1 {
+		if !hasBeenChecked[pointMatrix[lat][0]] {
+			neighborList = append(neighborList, []int{lat, 0})
+		}
+	} else {
+		if !hasBeenChecked[pointMatrix[lat][lon+1]] {
+			neighborList = append(neighborList, []int{lat, lon + 1})
+		}
+	}
+	for _, i := range neighborList {
+		hasBeenChecked[pointMatrix[i[0]][i[1]]] = true
 	}
 	return neighborList
 }
 
 // computes all edges which are relevant for the point in polygon test (e.g. only points within a certain longitude range)
 func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
+	if node[0] < -179.5 {
+		node[0] = -179.5
+	}
 	//list of edges with at least one point on the left side
 	var leftList []EdgeCoordinate
 	//list of edges with at least  one point on the right side

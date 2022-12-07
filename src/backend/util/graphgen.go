@@ -43,7 +43,7 @@ func GenerateGraph(numberOfNodes int, coastline Coastline) Graph {
 			waterLatList = append(waterLatList, z)
 			count++
 			if count%500 == 0 {
-				PrintProgress(count, numberOfNodes, "nodes")
+				PrintProgress(count, numberOfNodes, "nodes checked.")
 			}
 		}
 		isPointInWaterMatrix = append(isPointInWaterMatrix, waterLatList)

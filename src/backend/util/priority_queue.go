@@ -1,4 +1,4 @@
-// THIS CODE IS COPIED FROM: https://pkg.go.dev/container/heap
+// THIS CODE IS mostly COPIED FROM: https://pkg.go.dev/container/heap
 
 package util
 

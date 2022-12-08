@@ -14,7 +14,7 @@ var graph util.Graph
 
 func main() {
 	println("\nStart!")
-	randomTestFunction(10000)
+	randomTestFunction(20000)
 	startServer()
 }
 
@@ -66,11 +66,16 @@ func getRouteHandler() http.HandlerFunc {
 // if no route found -> -1y0
 // if route found -> distanceylon1zlat1xlon2zlat2x...
 func getRouteString(src int64, dest int64) string {
-	//testString success
-	//succ := "64251y12z15x37z45x-15z-80"
-	//testString failure
-	fail := "-1y0"
-	return fail
+	distance, path := util.CalculateDijkstra(graph, int(src), int(dest))
+	output := fmt.Sprintf("%dy", distance)
+	for i, nodeID := range path {
+		if i == len(path)-1 {
+			output = fmt.Sprintf("%s%fz%f", output, graph.Nodes[nodeID][0], graph.Nodes[nodeID][1])
+		} else {
+			output = fmt.Sprintf("%s%fz%fx", output, graph.Nodes[nodeID][0], graph.Nodes[nodeID][1])
+		}
+	}
+	return output
 }
 
 func getPreprocessingHandler() http.HandlerFunc {
@@ -132,15 +137,7 @@ func randomTestFunction(numOfNodes int) {
 	// "../../data/global.sec" THIS IS THE BIG ONE FROM ILIAS (renamed, takes up ~11GB of RAM!)
 	path := "../../data/antarctica.osm.pbf"
 	coastline := util.GetCoastline(path)
-	//generates grid around globe
-	var testPoints [][]float64
-	testPoints = append(testPoints, []float64{-180, -85.5})
-	testPoints = append(testPoints, []float64{-70, -15.5})
-	testPoints = append(testPoints, []float64{50, 111})
-	testPoints = append(testPoints, []float64{120, -65.5})
-	for _, p := range testPoints {
-		util.IsPointInWater(p, coastline)
-	}
+	//generates grid around globes
 	graph = util.GenerateGraph(numOfNodes, coastline)
 	util.PrintPointsToGEOJSON(graph.Nodes)
 	util.PrintEdgesToGEOJSON(graph)

@@ -56,23 +56,30 @@ func GenerateGraph(numberOfNodes int, coastline Coastline) Graph {
 
 func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix [][]bool, numOfNodes int) Graph {
 	println("creating edges from points...")
+
 	var edgeSource []int
 	var edgeDest []int
-	var offsetList []int
+	var offsetList = make([]int, len(points))
 	var distanceList []int
-
+	var totalOffset = 0
+	offsetList[0] = 0
 	for y := 0; y < len(indexMatrix); y++ {
 		latList := indexMatrix[y]
 		for x := 0; x < len(latList); x++ {
 			//add left edge
+			offsetList[indexMatrix[y][x]] = totalOffset
 			if pointsInWaterMatrix[y][x] {
+
 				if x == 0 {
 					if pointsInWaterMatrix[y][len(latList)-1] {
+						totalOffset++
 						edgeSource = append(edgeSource, indexMatrix[y][x])
 						edgeDest = append(edgeDest, indexMatrix[y][len(latList)-1])
 					}
 				} else {
 					if pointsInWaterMatrix[y][x-1] {
+
+						totalOffset++
 						edgeSource = append(edgeSource, indexMatrix[y][x])
 						edgeDest = append(edgeDest, indexMatrix[y][x-1])
 					}
@@ -80,11 +87,15 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 				//add right edge
 				if x == len(latList)-1 {
 					if pointsInWaterMatrix[y][0] {
+
+						totalOffset++
 						edgeSource = append(edgeSource, indexMatrix[y][x])
 						edgeDest = append(edgeDest, indexMatrix[y][0])
 					}
 				} else {
 					if pointsInWaterMatrix[y][x+1] {
+
+						totalOffset++
 						edgeSource = append(edgeSource, indexMatrix[y][x])
 						edgeDest = append(edgeDest, indexMatrix[y][x+1])
 					}
@@ -93,6 +104,8 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 				if y != 0 {
 					position := int(math.Round(float64(x * len(indexMatrix[y-1]) / len(indexMatrix[y]))))
 					if pointsInWaterMatrix[y-1][position] {
+
+						totalOffset++
 						edgeSource = append(edgeSource, indexMatrix[y][x])
 						edgeDest = append(edgeDest, indexMatrix[y-1][position])
 					}
@@ -101,11 +114,14 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 				if y != len(indexMatrix)-1 {
 					position := int(math.Round(float64(x * len(indexMatrix[y+1]) / len(indexMatrix[y]))))
 					if pointsInWaterMatrix[y+1][position] {
+
+						totalOffset++
 						edgeSource = append(edgeSource, indexMatrix[y][x])
 						edgeDest = append(edgeDest, indexMatrix[y+1][position])
 					}
 				}
 			}
+
 		}
 	}
 	distanceList = CalcEdgeDistances(points, edgeSource, edgeDest)

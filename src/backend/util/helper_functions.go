@@ -117,10 +117,10 @@ func mergeTwoWays(startWay way, endWay way) way {
 }
 
 // simple function used to print progress into console with current value out of maximum value and a unit
-func PrintProgress(current int, max int, unit string) {
+func PrintProgress(current int, max int, unit string, startTime time.Time) {
 	progress := float64(current) / float64(max)
-	currentTime := time.Now()
-	fmt.Printf("%s - Water-checking nodes |  Progress: %2.2f%s%d%s%d %s\n\r", currentTime.Format("3:04PM"), 100*progress, "% - ", current, " out of ", max, unit)
+
+	fmt.Printf("%.3fs - Water-checking nodes |  Progress: %2.2f%s%d%s%d %s\n\r", time.Since(startTime).Seconds(), 100*progress, "% - ", current, " out of ", max, unit)
 }
 
 // for input coordinates: estimate position of closest node on the grid, then breadth search until it finds a node that is on the grid and in water
@@ -230,7 +230,8 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 	//all points sorted by longitude, stored together with the ID of the respective edge
 	sortedLonList := coastline.SortedLonEdgeList
 	//maximum longitude difference between two points of the same edge
-	maxLonDiff := coastline.MaxLonDiff
+	//maxLonDiff := coastline.MaxLonDiffs[GetLonDiffIndex(len(coastline.MaxLonDiffs), node[1])]
+	maxLonDiff := coastline.maxLonDiff
 	//get relevant longitudes when point to check is not close to 180°/-180° longitude
 	if math.Abs(node[0])+maxLonDiff < 180 {
 		// left side: lon-maxdiff to lon

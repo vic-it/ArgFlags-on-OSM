@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"math"
 	"runtime"
+	"time"
 )
 
 // math from here https://www.cmu.edu/biolphys/deserno/pdf/sphere_equi.pdf
 func GenerateGraph(numberOfNodes int, coastline Coastline) Graph {
+	startTime := time.Now()
+	startTimeTotal := time.Now()
 	println("generating points...")
 	// simple list of all points
 	var points [][]float64
@@ -45,12 +48,14 @@ func GenerateGraph(numberOfNodes int, coastline Coastline) Graph {
 			waterLatList = append(waterLatList, z)
 			count++
 			if count%500 == 0 {
-				PrintProgress(count, numberOfNodes, "nodes checked.")
+				PrintProgress(count, numberOfNodes, "nodes checked.", startTime)
+				startTime = time.Now()
 			}
 		}
 		isPointInWaterMatrix = append(isPointInWaterMatrix, waterLatList)
 		pointMatrix = append(pointMatrix, latList)
 	}
+	fmt.Printf("Time to generate grid points: %.3fs\n", time.Since(startTimeTotal).Seconds())
 	fmt.Printf("%d points created\n", count)
 	coastline.Edges = [][]int64{}
 	coastline.Nodes = nil
@@ -62,7 +67,7 @@ func GenerateGraph(numberOfNodes int, coastline Coastline) Graph {
 
 func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix [][]bool, numOfNodes int) Graph {
 	println("creating edges from points...")
-
+	startTime := time.Now()
 	var edgeSource []int
 	var edgeDest []int
 	var offsetList = make([]int, len(points))
@@ -130,9 +135,12 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 
 		}
 	}
-	distanceList = CalcEdgeDistances(points, edgeSource, edgeDest)
-	fmt.Printf("%d edges generated", len(edgeDest))
 
+	fmt.Printf("Time to generate edges of grid: %.3fs\n", time.Since(startTime).Seconds())
+	startTime = time.Now()
+	distanceList = CalcEdgeDistances(points, edgeSource, edgeDest)
+
+	fmt.Printf("Time to calculate edge distances: %.3fs\n", time.Since(startTime).Seconds())
 	return Graph{Nodes: points, Sources: edgeSource, Targets: edgeDest, Weights: distanceList, Offsets: offsetList, NodeMatrix: indexMatrix, NodeInWaterMatrix: pointsInWaterMatrix, intendedNodeQuantity: numOfNodes}
 }
 

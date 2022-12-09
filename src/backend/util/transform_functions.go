@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	geojson "github.com/paulmach/go.geojson"
 	"github.com/qedus/osmpbf"
@@ -41,6 +42,7 @@ func check(e error) {
 // numberOfNodesIntendedToCreate
 // z (end)
 func GraphToFile(graph Graph, path string) {
+	startTime := time.Now()
 	println("WRITING GRAPH TO FILE...")
 	nodesToWrite := len(graph.Nodes)
 	edgesToWrite := len(graph.Targets)
@@ -100,10 +102,13 @@ func GraphToFile(graph Graph, path string) {
 	//END
 	w.WriteString("z")
 	w.Flush()
+
+	fmt.Printf("Time to write graph to file: %.3fs\n", time.Since(startTime).Seconds())
 }
 
 // imports a graph from a .graph file
 func FileToGraph(path string) Graph {
+	startTime := time.Now()
 	graph := Graph{Nodes: [][]float64{}, Sources: []int{}, Targets: []int{}, Weights: []int{}, Offsets: []int{}, NodeMatrix: [][]int{}, NodeInWaterMatrix: [][]bool{}, intendedNodeQuantity: 0}
 	println("IMPORTING GRAPH FROM FILE...")
 	f, err := os.Open(path)
@@ -167,58 +172,61 @@ func FileToGraph(path string) Graph {
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
-	println("IMPORT FINISHED")
+	fmt.Printf("Time to read graph from file: %.3fs\n", time.Since(startTime).Seconds())
 	return graph
 }
 
-func BASICtoGEOJSONFile(basicData Basic) {
-	//save basic data in geojson format -> as file (.json)
-	var polygonList [][][]float64
-	wayCtr := 0
-	nodeCtr := 0
-	for _, wayx := range basicData.ways {
-		//increment way counter
-		wayCtr++
-		//store this way as polygon
-		var polygon [][]float64
-		for _, nodex := range wayx.nodes {
-			//increment node counter
-			nodeCtr++
-			var nodeAsArray []float64
-			nodeAsArray = append(nodeAsArray, basicData.Nodes[nodex].lon)
-			nodeAsArray = append(nodeAsArray, basicData.Nodes[nodex].lat)
-			// prepare node s.t. garbage collection will clean it up
-			polygon = append(polygon, nodeAsArray)
-			//basicData.nodes[nodex] = node{}
+// func BASICtoGEOJSONFile(basicData Basic) {
+// 	//save basic data in geojson format -> as file (.json)
+// 	var polygonList [][][]float64
+// 	wayCtr := 0
+// 	nodeCtr := 0
+// 	for _, wayx := range basicData.ways {
+// 		//increment way counter
+// 		wayCtr++
+// 		//store this way as polygon
+// 		var polygon [][]float64
+// 		for _, nodex := range wayx.nodes {
+// 			//increment node counter
+// 			nodeCtr++
+// 			var nodeAsArray []float64
+// 			nodeAsArray = append(nodeAsArray, basicData.Nodes[nodex].lon)
+// 			nodeAsArray = append(nodeAsArray, basicData.Nodes[nodex].lat)
+// 			// prepare node s.t. garbage collection will clean it up
+// 			polygon = append(polygon, nodeAsArray)
+// 			//basicData.nodes[nodex] = node{}
 
-			// force garbage collection -> else memory overruns
-			if nodeCtr%10000 == 0 {
-				runtime.GC()
-			}
+// 			// force garbage collection -> else memory overruns
+// 			if nodeCtr%10000 == 0 {
+// 				runtime.GC()
+// 			}
 
-		}
-		polygonList = append(polygonList, polygon)
-		//prepare way s.t. garbage collection will clean it
-		wayx = way{}
-		// print geojson progress aswell as force garbage collection
-		if wayCtr%10000 == 0 {
-			PrintProgress(wayCtr, len(basicData.ways), "ways")
-			runtime.GC()
-		}
-	}
-	g := geojson.NewMultiPolygonGeometry(polygonList)
-	rawJSON, _ := g.MarshalJSON()
-	err := os.WriteFile("../../data/geojson.json", rawJSON, 0644)
-	println("geojson file written to: '../../data/geojson.json'")
-	fmt.Printf("%d out of %d nodes were processed\n", nodeCtr, len(basicData.Nodes))
-	if err != nil {
-		panic(err)
-	}
-	rawJSON = nil
-}
+// 		}
+// 		polygonList = append(polygonList, polygon)
+// 		//prepare way s.t. garbage collection will clean it
+// 		wayx = way{}
+// 		// print geojson progress aswell as force garbage collection
+// 		if wayCtr%10000 == 0 {
+// 			PrintProgress(wayCtr, len(basicData.ways), "ways")
+// 			runtime.GC()
+// 		}
+// 	}
+// 	g := geojson.NewMultiPolygonGeometry(polygonList)
+// 	rawJSON, _ := g.MarshalJSON()
+// 	err := os.WriteFile("../../data/geojson.json", rawJSON, 0644)
+// 	println("geojson file written to: '../../data/geojson.json'")
+// 	fmt.Printf("%d out of %d nodes were processed\n", nodeCtr, len(basicData.Nodes))
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	rawJSON = nil
+// }
 
 func PrintPointsToGEOJSON(graph Graph) {
 	println("WRITING NODES TO GEOJSON")
+
+	startTime := time.Now()
+
 	points := graph.Nodes
 	fc := geojson.NewMultiPointFeature(points...)
 	fc.SetProperty("x", "y")
@@ -228,6 +236,7 @@ func PrintPointsToGEOJSON(graph Graph) {
 		panic(err)
 	}
 	rawJSON = nil
+	fmt.Printf("Time to read in coast lines: %.3fs\n", time.Since(startTime).Seconds())
 }
 
 func PrintEdgesToGEOJSON(graph Graph) {
@@ -253,6 +262,7 @@ func PrintEdgesToGEOJSON(graph Graph) {
 // gets the pbf file from the path and outputs a list of all edges and 3 lists of edge id's sorted by e.g. max lat
 func GetCoastline(path string) Coastline {
 	println("READING IN COASTLINES... (can take some time)")
+	startTime := time.Now()
 	nodes := make(map[int64][]float64) //(ID,[lon, lat])
 	//isUsefulNode := make(map[int64]bool)
 	var edges [][]int64 // -> (ID of EDGE, [ID node 1, ID node 2])
@@ -260,6 +270,15 @@ func GetCoastline(path string) Coastline {
 	var sortedLonList []EdgeCoordinate
 	//maximum width of an edge
 	var maxEdgeWidth float64
+	var maxEdgeWidths []float64
+	//higher -> possibly better performance -> diminishing returns at some point?
+	latGranularity := 360
+
+	var placeholder [][]EdgeCoordinate
+	for i := 0; i < latGranularity; i++ {
+		maxEdgeWidths = append(maxEdgeWidths, 0)
+		placeholder = append(placeholder, []EdgeCoordinate{})
+	}
 
 	f, err := os.Open(path)
 	if err != nil {
@@ -278,6 +297,7 @@ func GetCoastline(path string) Coastline {
 		log.Fatal(err)
 	}
 
+	garbageCollectorCounter := 0
 	var nc, wc, rc uint64
 	for {
 		if v, err := d.Decode(); err == io.EOF {
@@ -291,6 +311,12 @@ func GetCoastline(path string) Coastline {
 				// save all nodes as [lon, lat]
 				nodes[v.ID] = []float64{v.Lon, v.Lat}
 				nc++
+				v.Tags = nil
+				v = nil
+				garbageCollectorCounter++
+				if garbageCollectorCounter%5000000 == 0 {
+					runtime.GC()
+				}
 			case *osmpbf.Way:
 				// only save ways with the coastline tag
 				if v.Tags["natural"] == "coastline" && v.Tags["coastline"] != "bogus" {
@@ -303,6 +329,13 @@ func GetCoastline(path string) Coastline {
 					// 	isUsefulNode[id] = true
 					// }
 					wc++
+					v.NodeIDs = []int64{}
+					v.Tags = nil
+					v = nil
+					garbageCollectorCounter++
+					if garbageCollectorCounter%5000000 == 0 {
+						runtime.GC()
+					}
 				}
 			case *osmpbf.Relation:
 				// dont save any relations for now
@@ -313,11 +346,27 @@ func GetCoastline(path string) Coastline {
 		}
 	}
 
+	fmt.Printf("Time to read in coast lines: %.3fs\n", time.Since(startTime).Seconds())
+
+	startTime = time.Now()
 	// fill [to be sorted] lists
 	for id, edge := range edges {
+		checkMaxLon(maxEdgeWidths, CalcLonDiff(nodes[edge[0]][0], nodes[edge[1]][0]), nodes[edge[0]][1], nodes[edge[1]][1])
 		maxEdgeWidth = math.Max(maxEdgeWidth, CalcLonDiff(nodes[edge[0]][0], nodes[edge[1]][0]))
+		id1 := GetLonDiffIndex(len(maxEdgeWidths), nodes[edge[0]][1])
+		id2 := GetLonDiffIndex(len(maxEdgeWidths), nodes[edge[1]][1])
+		placeholder[id1] = append(placeholder[id1], EdgeCoordinate{edgeID: id, coordinate: nodes[edge[0]][0]})
+		placeholder[id1] = append(placeholder[id1], EdgeCoordinate{edgeID: id, coordinate: nodes[edge[1]][0]})
+		if id1 != id2 {
+			placeholder[id2] = append(placeholder[id2], EdgeCoordinate{edgeID: id, coordinate: nodes[edge[0]][0]})
+			placeholder[id2] = append(placeholder[id2], EdgeCoordinate{edgeID: id, coordinate: nodes[edge[1]][0]})
+		}
+
 		sortedLonList = append(sortedLonList, EdgeCoordinate{edgeID: id, coordinate: nodes[edge[0]][0]})
 		sortedLonList = append(sortedLonList, EdgeCoordinate{edgeID: id, coordinate: nodes[edge[1]][0]})
+	}
+	for x, i := range maxEdgeWidths {
+		fmt.Printf("max lat at index %d: %f\n", x, i)
 	}
 	fmt.Printf("Maximum lat diff: %.6f\n", maxEdgeWidth)
 
@@ -325,8 +374,24 @@ func GetCoastline(path string) Coastline {
 	//functions for sorting algorithm
 	sort.Sort(ByCoordinate(sortedLonList))
 
+	fmt.Printf("Time to sort longitude list: %.3fs\n", time.Since(startTime).Seconds())
 	fmt.Printf("Read: %d Nodes and %d edges\n", len(nodes), len(edges))
 
-	coastline := Coastline{Nodes: nodes, Edges: edges, SortedLonEdgeList: sortedLonList, MaxLonDiff: maxEdgeWidth}
+	coastline := Coastline{Nodes: nodes, Edges: edges, SortedLonEdgeList: sortedLonList, MaxLonDiffs: maxEdgeWidths, maxLonDiff: maxEdgeWidth}
 	return coastline
+}
+
+func checkMaxLon(maxLonDiffList []float64, lonDiff float64, lat1 float64, lat2 float64) {
+	n := len(maxLonDiffList)
+
+	index1 := GetLonDiffIndex(n, lat1)
+
+	index2 := GetLonDiffIndex(n, lat2)
+
+	maxLonDiffList[index1] = math.Max(maxLonDiffList[index1], lonDiff)
+	maxLonDiffList[index2] = math.Max(maxLonDiffList[index2], lonDiff)
+}
+
+func GetLonDiffIndex(n int, lat float64) int {
+	return int(math.Round((lat + 90) * (float64(n) / 180)))
 }

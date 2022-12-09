@@ -137,7 +137,7 @@ func initialize() {
 
 	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	// createGraph(global, 20000)
+	// createGraph(antarctica, 2000000)
 	// util.GraphToFile(graph, graphPath)
 	//-----------------------------------------------------
 
@@ -148,7 +148,7 @@ func initialize() {
 
 	// PRINT TO GEOJSON BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	// util.PrintPointsToGEOJSON(graph)
-	// util.PrintEdgesToGEOJSON(graph)
+	util.PrintPointsToGEOJSON(graph)
+	util.PrintEdgesToGEOJSON(graph)
 	//-----------------------------------------------------
 }

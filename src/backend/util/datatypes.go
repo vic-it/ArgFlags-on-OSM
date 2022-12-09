@@ -50,5 +50,6 @@ type Coastline struct {
 	Nodes             map[int64][]float64
 	Edges             [][]int64
 	SortedLonEdgeList []EdgeCoordinate
-	MaxLonDiff        float64
+	MaxLonDiffs       []float64
+	maxLonDiff        float64
 }

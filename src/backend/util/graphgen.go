@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"math"
+	"runtime"
 )
 
 // math from here https://www.cmu.edu/biolphys/deserno/pdf/sphere_equi.pdf
@@ -39,6 +40,7 @@ func GenerateGraph(numberOfNodes int, coastline Coastline) Graph {
 			point = append(point, lat)
 			points = append(points, point)
 			latList = append(latList, len(points)-1)
+			//bottle neck here
 			z := IsPointInWater(point, coastline)
 			waterLatList = append(waterLatList, z)
 			count++
@@ -50,7 +52,11 @@ func GenerateGraph(numberOfNodes int, coastline Coastline) Graph {
 		pointMatrix = append(pointMatrix, latList)
 	}
 	fmt.Printf("%d points created\n", count)
-
+	coastline.Edges = [][]int64{}
+	coastline.Nodes = nil
+	coastline.SortedLonEdgeList = []EdgeCoordinate{}
+	coastline = Coastline{}
+	runtime.GC()
 	return GenerateEdges(points, pointMatrix, isPointInWaterMatrix, numberOfNodes)
 }
 

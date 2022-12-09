@@ -14,7 +14,9 @@ var graph util.Graph
 
 func main() {
 	println("\nStart!")
+	// either creates a new graph entirely (can take some time) or imports a preprocessed graph (very fast)
 	initialize()
+	// starts server and web interface -> reachable at localhost:8080
 	startServer()
 }
 
@@ -126,20 +128,22 @@ func createGraph(pathToCoastlinesPBF string, numberOfNodes int) {
 
 // initializes a graph either by importing it from a file or by creating one (creating can take a long time)
 func initialize() {
+	// relevant paths
 	graphPath := "../../data/graph.graph"
-	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
-	//-----------------------------------------------------
 	antarctica := "../../data/antarctica.osm.pbf"
 	global := "../../data/global.sec"
-	fmt.Printf("%s%s", antarctica[0:1], global[0:2])
-	numberOfNodes := 10000000
-	createGraph(antarctica, numberOfNodes)
-	util.GraphToFile(graph, graphPath)
+	// prints "..." so we dont have to comment/uncomment all paths
+	fmt.Printf("%s%s%s\n", antarctica[0:1], global[0:1], graphPath[0:1])
+
+	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
+	//-----------------------------------------------------
+	// createGraph(global, 20000)
+	// util.GraphToFile(graph, graphPath)
 	//-----------------------------------------------------
 
-	// IMPORT NEW GRAPH BY UNCOMMENTING BELOW:
+	// IMPORT GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	// graph = util.FileToGraph("../../data/graph.graph")
+	graph = util.FileToGraph("../../data/graph.graph")
 	//-----------------------------------------------------
 
 	// PRINT TO GEOJSON BY UNCOMMENTING BELOW:

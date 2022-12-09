@@ -102,7 +102,7 @@ func GraphToFile(graph Graph, path string) {
 	w.Flush()
 }
 
-// here the graph should not be initalized and will be overwritten
+// imports a graph from a .graph file
 func FileToGraph(path string) Graph {
 	graph := Graph{Nodes: [][]float64{}, Sources: []int{}, Targets: []int{}, Weights: []int{}, Offsets: []int{}, NodeMatrix: [][]int{}, NodeInWaterMatrix: [][]bool{}, intendedNodeQuantity: 0}
 	println("IMPORTING GRAPH FROM FILE...")
@@ -124,7 +124,7 @@ func FileToGraph(path string) Graph {
 				list := strings.Split(line, ",")
 				no, _ := strconv.Atoi(list[0])
 				ed, _ := strconv.Atoi(list[1])
-				fmt.Printf("Reading graph with: %d eodes and %d edges\n", no, ed)
+				fmt.Printf("Reading graph with: %d nodes and %d edges\n", no, ed)
 			case 1: // lon,lat				(of all nodes)
 				list := strings.Split(line, ",")
 				lon, _ := strconv.ParseFloat(list[0], 64)
@@ -252,6 +252,7 @@ func PrintEdgesToGEOJSON(graph Graph) {
 
 // gets the pbf file from the path and outputs a list of all edges and 3 lists of edge id's sorted by e.g. max lat
 func GetCoastline(path string) Coastline {
+	println("READING IN COASTLINES... (can take some time)")
 	nodes := make(map[int64][]float64) //(ID,[lon, lat])
 	//isUsefulNode := make(map[int64]bool)
 	var edges [][]int64 // -> (ID of EDGE, [ID node 1, ID node 2])

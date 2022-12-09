@@ -43,7 +43,7 @@ type Graph struct {
 	// respective 2D matrix for the "PointMatrix" but instead of IDs it stores whether the node is in water or on land
 	NodeInWaterMatrix [][]bool
 	//number of nodes intended to create - usually close to len[nodes] but a bit higher
-	NumOfNodes int
+	intendedNodeQuantity int
 }
 
 type Coastline struct {

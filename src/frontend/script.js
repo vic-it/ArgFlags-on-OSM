@@ -89,9 +89,9 @@ function routeHandler(){
                 lon = +c[0]
                 coordinates.push([lat, lon])
                 path1 = L.polyline(coordinates, {color: 'blue'}).addTo(map)
-            document.getElementById("distance").value = ""+distance+"m"
+            document.getElementById("distance").value = ""+distance+"km"
             
-            console.log("Path found with distance: "+distance+"m")
+            console.log("Path found with distance: "+distance+"km")
         }
     })
 }

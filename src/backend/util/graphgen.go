@@ -127,7 +127,7 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 	distanceList = CalcEdgeDistances(points, edgeSource, edgeDest)
 	fmt.Printf("%d edges generated", len(edgeDest))
 
-	return Graph{Nodes: points, Sources: edgeSource, Targets: edgeDest, Weights: distanceList, Offsets: offsetList, NodeMatrix: indexMatrix, NodeInWaterMatrix: pointsInWaterMatrix, NumOfNodes: numOfNodes}
+	return Graph{Nodes: points, Sources: edgeSource, Targets: edgeDest, Weights: distanceList, Offsets: offsetList, NodeMatrix: indexMatrix, NodeInWaterMatrix: pointsInWaterMatrix, intendedNodeQuantity: numOfNodes}
 }
 
 func CalcEdgeDistances(points [][]float64, src []int, dest []int) []int {

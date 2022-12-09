@@ -14,7 +14,7 @@ var graph util.Graph
 
 func main() {
 	println("\nStart!")
-	randomTestFunction(20000)
+	initialize()
 	startServer()
 }
 
@@ -78,6 +78,7 @@ func getRouteString(src int64, dest int64) string {
 	return output
 }
 
+// todo
 func getPreprocessingHandler() http.HandlerFunc {
 	proprocessHandler := func(writer http.ResponseWriter, request *http.Request) {
 		urlQuery := request.URL.Query()
@@ -94,6 +95,7 @@ func getPreprocessingHandler() http.HandlerFunc {
 	return proprocessHandler
 }
 
+// todo
 func getDirectoryHandler() http.HandlerFunc {
 	directoryHandler := func(writer http.ResponseWriter, request *http.Request) {
 		urlQuery := request.URL.Query()
@@ -122,23 +124,27 @@ func createGraph(pathToCoastlinesPBF string, numberOfNodes int) {
 	graph = util.GenerateGraph(numberOfNodes, util.GetCoastline(pathToCoastlinesPBF))
 }
 
-func readGraphFromFMI(path string) {
+// initializes a graph either by importing it from a file or by creating one (creating can take a long time)
+func initialize() {
+	graphPath := "../../data/graph.graph"
+	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
+	//-----------------------------------------------------
+	antarctica := "../../data/antarctica.osm.pbf"
+	global := "../../data/global.sec"
+	fmt.Printf("%s%s", antarctica[0:1], global[0:2])
+	numberOfNodes := 10000000
+	createGraph(antarctica, numberOfNodes)
+	util.GraphToFile(graph, graphPath)
+	//-----------------------------------------------------
 
-}
+	// IMPORT NEW GRAPH BY UNCOMMENTING BELOW:
+	//-----------------------------------------------------
+	// graph = util.FileToGraph("../../data/graph.graph")
+	//-----------------------------------------------------
 
-func printGraphToFMI(path string) {
-
-}
-
-func randomTestFunction(numOfNodes int) {
-
-	// "../../data/antarctica.osm.pbf"
-	// "../../data/central-america.osm.pbf"
-	// "../../data/global.sec" THIS IS THE BIG ONE FROM ILIAS (renamed, takes up ~11GB of RAM!)
-	path := "../../data/antarctica.osm.pbf"
-	coastline := util.GetCoastline(path)
-	//generates grid around globes
-	graph = util.GenerateGraph(numOfNodes, coastline)
-	util.PrintPointsToGEOJSON(graph.Nodes)
-	util.PrintEdgesToGEOJSON(graph)
+	// PRINT TO GEOJSON BY UNCOMMENTING BELOW:
+	//-----------------------------------------------------
+	// util.PrintPointsToGEOJSON(graph)
+	// util.PrintEdgesToGEOJSON(graph)
+	//-----------------------------------------------------
 }

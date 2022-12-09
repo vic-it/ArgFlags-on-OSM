@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -8,17 +9,166 @@ import (
 	"os"
 	"runtime"
 	"sort"
+	"strconv"
+	"strings"
 
 	geojson "github.com/paulmach/go.geojson"
 	"github.com/qedus/osmpbf"
 )
 
-func BASICtoFMI() {
-
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
 }
 
-func FMItoBASIC() {
+// writes a graph into a file with the following format:
+//
+//	(ctr = 0)
+//
+// numOfNodes,numOfEdges
+// x (ctr = 1)
+// lon,lat		(of all nodes)
+// x (ctr = 2)
+// src,target,weight  (for each edge)
+// x (ctr = 3)
+// offset				(for all nodes)
+// x (ctr = 4)
+// nodeID0ofRow,nodeID1ofRow,... (for all nodes in this NodeMatrixRow - repeat for all rows)
+// x (ctr = 5)
+// isInWater1,...			(analogous to nodeid matrix)
+// x (ctr = 6)
+// numberOfNodesIntendedToCreate
+// z (end)
+func GraphToFile(graph Graph, path string) {
+	println("WRITING GRAPH TO FILE...")
+	nodesToWrite := len(graph.Nodes)
+	edgesToWrite := len(graph.Targets)
 
+	f, err := os.Create(path)
+	check(err)
+	defer f.Close()
+	w := bufio.NewWriter(f)
+
+	//WRITE HERE
+
+	w.WriteString(fmt.Sprintf("%d,%d\n", nodesToWrite, edgesToWrite))
+	w.WriteString("x\n")
+	//WRITE NODES
+	for _, node := range graph.Nodes {
+		w.WriteString(fmt.Sprintf("%f,%f\n", node[0], node[1]))
+	}
+	w.WriteString("x\n")
+	//WRITE EDGES
+	for i := 0; i < len(graph.Targets); i++ {
+		w.WriteString(fmt.Sprintf("%d,%d,%d\n", graph.Sources[i], graph.Targets[i], graph.Weights[i]))
+	}
+	w.WriteString("x\n")
+	//WRITE OFFSETS
+	for _, offset := range graph.Offsets {
+		w.WriteString(fmt.Sprintf("%d\n", offset))
+	}
+	w.WriteString("x\n")
+	//WRITE NODE MATRIX
+	for _, row := range graph.NodeMatrix {
+		rowString := ""
+		for i, nodeID := range row {
+			if i < len(row)-1 {
+				rowString += fmt.Sprintf("%d,", nodeID)
+			} else {
+				rowString += fmt.Sprintf("%d\n", nodeID)
+			}
+		}
+		w.WriteString(rowString)
+	}
+	w.WriteString("x\n")
+	//WRITE WATER MATRIX
+	for _, row := range graph.NodeInWaterMatrix {
+		rowString := ""
+		for i, isInWater := range row {
+			if i < len(row)-1 {
+				rowString += fmt.Sprintf("%t,", isInWater)
+			} else {
+				rowString += fmt.Sprintf("%t\n", isInWater)
+			}
+		}
+		w.WriteString(rowString)
+	}
+	w.WriteString("x\n")
+	//WRITE INTENDED NUM OF NODES
+	w.WriteString(fmt.Sprintf("%d\n", graph.intendedNodeQuantity))
+	//END
+	w.WriteString("z")
+	w.Flush()
+}
+
+// here the graph should not be initalized and will be overwritten
+func FileToGraph(path string) Graph {
+	graph := Graph{Nodes: [][]float64{}, Sources: []int{}, Targets: []int{}, Weights: []int{}, Offsets: []int{}, NodeMatrix: [][]int{}, NodeInWaterMatrix: [][]bool{}, intendedNodeQuantity: 0}
+	println("IMPORTING GRAPH FROM FILE...")
+	f, err := os.Open(path)
+	check(err)
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	ctr := 0
+	//READ GRAPH HERE
+	for scanner.Scan() {
+		line := strings.TrimRight(scanner.Text(), "\n")
+		if line == "x" {
+			ctr++
+		} else if line == "z" {
+			break
+		} else {
+			switch ctr {
+			case 0: //READ NUM OF NODES/EDGES
+				list := strings.Split(line, ",")
+				no, _ := strconv.Atoi(list[0])
+				ed, _ := strconv.Atoi(list[1])
+				fmt.Printf("Reading graph with: %d eodes and %d edges\n", no, ed)
+			case 1: // lon,lat				(of all nodes)
+				list := strings.Split(line, ",")
+				lon, _ := strconv.ParseFloat(list[0], 64)
+				lat, _ := strconv.ParseFloat(list[1], 64)
+				graph.Nodes = append(graph.Nodes, []float64{lon, lat})
+			case 2: // src,target,weight 	(for each edge)
+				list := strings.Split(line, ",")
+				src, _ := strconv.Atoi(list[0])
+				trgt, _ := strconv.Atoi(list[1])
+				weight, _ := strconv.Atoi(list[2])
+				graph.Sources = append(graph.Sources, src)
+				graph.Targets = append(graph.Targets, trgt)
+				graph.Weights = append(graph.Weights, weight)
+			case 3: // offset				(for all nodes)
+				list := strings.Split(line, ",")
+				offset, _ := strconv.Atoi(list[0])
+				graph.Offsets = append(graph.Offsets, offset)
+			case 4: // nodeID0ofRow,nodeID1ofRow,..
+				list := strings.Split(line, ",")
+				row := []int{}
+				for _, stringID := range list {
+					nodeID, _ := strconv.Atoi(stringID)
+					row = append(row, nodeID)
+				}
+				graph.NodeMatrix = append(graph.NodeMatrix, row)
+			case 5: // isInWater1,...
+				list := strings.Split(line, ",")
+				row := []bool{}
+				for _, boolAsString := range list {
+					isInWater, _ := strconv.ParseBool(boolAsString)
+					row = append(row, isInWater)
+				}
+				graph.NodeInWaterMatrix = append(graph.NodeInWaterMatrix, row)
+			case 6: // numberOfNodesIntendedToCreate
+				graph.intendedNodeQuantity, _ = strconv.Atoi(line)
+			}
+		}
+	}
+	//END
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	println("IMPORT FINISHED")
+	return graph
 }
 
 func BASICtoGEOJSONFile(basicData Basic) {
@@ -67,8 +217,9 @@ func BASICtoGEOJSONFile(basicData Basic) {
 	rawJSON = nil
 }
 
-func PrintPointsToGEOJSON(points [][]float64) {
-
+func PrintPointsToGEOJSON(graph Graph) {
+	println("WRITING NODES TO GEOJSON")
+	points := graph.Nodes
 	fc := geojson.NewMultiPointFeature(points...)
 	fc.SetProperty("x", "y")
 	rawJSON, _ := fc.MarshalJSON()
@@ -80,6 +231,7 @@ func PrintPointsToGEOJSON(points [][]float64) {
 }
 
 func PrintEdgesToGEOJSON(graph Graph) {
+	println("WRITING EDGES TO GEOJSON")
 	points := graph.Nodes
 	src := graph.Sources
 	dest := graph.Targets

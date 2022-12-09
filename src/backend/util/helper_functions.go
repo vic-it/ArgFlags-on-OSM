@@ -48,8 +48,8 @@ func dist(src []float64, dest []float64) float64 {
 	srcLon := src[0]
 	destLat := dest[1]
 	destLon := dest[0]
-	//radius in meters
-	earthRadius := 6371000.0
+	//radius in km
+	earthRadius := 6371.0
 	phi1 := PI * srcLat / 180.0
 	phi2 := PI * destLat / 180.0
 	deltaPhi := PI * (srcLat - destLat) / 180.0
@@ -127,7 +127,7 @@ func PrintProgress(current int, max int, unit string) {
 func GetClosestGridNode(lon float64, lat float64, graph Graph) int {
 	pi := math.Pi
 	// mirror variables in GenerateGraphPoints()
-	a := 4.0 * pi / float64(graph.NumOfNodes)
+	a := 4.0 * pi / float64(graph.intendedNodeQuantity)
 	d := math.Sqrt(a)
 	Mv := math.Round(pi / d)
 	dv := pi / Mv

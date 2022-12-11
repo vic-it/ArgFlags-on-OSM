@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"runtime"
+	"sort"
 	"time"
 )
 
@@ -142,19 +143,12 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 func mergeEdges(fwsrc []int, fwdest []int, bwEdges [][]int, n int) ([]int, []int, []int) {
 	println("before sort")
 
-	//sort.Sort(bySourceID(bwEdges))
-	// println("after sort")
-	// for u := 0; u < int(math.Min(float64(len(bwEdges)), 100.0)); u++ {
-	// 	fmt.Printf("edge (%d to %d)\n", bwEdges[u][0], bwEdges[u][01])
-	// }
+	sort.Sort(bySourceID(bwEdges))
 	var offsetList = make([]int, n)
 	var mergedSrc []int
 	var mergedDest []int
-	//TODO
 	fwdctr := 0
 	bwctr := 0
-	fmt.Printf("fwd size: %d\n", len(fwsrc))
-	fmt.Printf("bw size: %d\n", len(bwEdges))
 	// i = current source node IDX of which we want to add all edges
 	for i := 0; i < n; i++ {
 		//increment offset counter

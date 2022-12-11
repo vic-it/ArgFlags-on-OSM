@@ -142,18 +142,18 @@ func initialize() {
 
 	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	createGraph(global, 1000000)
-	util.GraphToFile(graph, graphPath)
+	// createGraph(global, 1000000)
+	// util.GraphToFile(graph, graphPath)
 	//-----------------------------------------------------
 
 	// IMPORT GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	// graph = util.FileToGraph("../../data/graph.graph")
+	graph = util.FileToGraph("../../data/graph.graph")
 	//-----------------------------------------------------
 
 	// PRINT TO GEOJSON BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	// util.PrintPointsToGEOJSON(graph)
-	// util.PrintEdgesToGEOJSON(graph)
+	util.PrintPointsToGEOJSON(graph)
+	util.PrintEdgesToGEOJSON(graph)
 	//-----------------------------------------------------
 }

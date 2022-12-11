@@ -21,7 +21,14 @@ type node struct {
 	lat float64
 	lon float64
 }
-
+type polygon struct {
+	sortedEdges []EdgeCoordinate
+	top         float64
+	left        float64
+	bottom      float64
+	right       float64
+	maxLonDiff  float64
+}
 type way struct {
 	nodes      []int64
 	lastNodeID int64

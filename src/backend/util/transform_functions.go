@@ -347,31 +347,21 @@ func GetCoastline(path string) Coastline {
 	}
 
 	fmt.Printf("Time to read in coast lines: %.3fs\n", time.Since(startTime).Seconds())
-
+	f.Close()
+	runtime.GC()
 	startTime = time.Now()
 	// fill [to be sorted] lists
 	for id, edge := range edges {
-		checkMaxLon(maxEdgeWidths, CalcLonDiff(nodes[edge[0]][0], nodes[edge[1]][0]), nodes[edge[0]][1], nodes[edge[1]][1])
 		maxEdgeWidth = math.Max(maxEdgeWidth, CalcLonDiff(nodes[edge[0]][0], nodes[edge[1]][0]))
-		id1 := GetLonDiffIndex(len(maxEdgeWidths), nodes[edge[0]][1])
-		id2 := GetLonDiffIndex(len(maxEdgeWidths), nodes[edge[1]][1])
-		placeholder[id1] = append(placeholder[id1], EdgeCoordinate{edgeID: id, coordinate: nodes[edge[0]][0]})
-		placeholder[id1] = append(placeholder[id1], EdgeCoordinate{edgeID: id, coordinate: nodes[edge[1]][0]})
-		if id1 != id2 {
-			placeholder[id2] = append(placeholder[id2], EdgeCoordinate{edgeID: id, coordinate: nodes[edge[0]][0]})
-			placeholder[id2] = append(placeholder[id2], EdgeCoordinate{edgeID: id, coordinate: nodes[edge[1]][0]})
-		}
-
 		sortedLonList = append(sortedLonList, EdgeCoordinate{edgeID: id, coordinate: nodes[edge[0]][0]})
 		sortedLonList = append(sortedLonList, EdgeCoordinate{edgeID: id, coordinate: nodes[edge[1]][0]})
 	}
-	for x, i := range maxEdgeWidths {
-		fmt.Printf("max lat at index %d: %f\n", x, i)
-	}
+
 	fmt.Printf("Maximum lat diff: %.6f\n", maxEdgeWidth)
 
 	// sort lists by coordinate
 	//functions for sorting algorithm
+	println("Sorting longitude list")
 	sort.Sort(ByCoordinate(sortedLonList))
 
 	fmt.Printf("Time to sort longitude list: %.3fs\n", time.Since(startTime).Seconds())

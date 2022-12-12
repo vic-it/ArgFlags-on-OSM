@@ -130,7 +130,7 @@ func getClosestValidNode(startingLat int, startingLon int, graph Graph) int {
 		curLat := nodesToCheck[currentIndex][0]
 		curLon := nodesToCheck[currentIndex][1]
 		if nodeInWaterList[curLat][curLon] {
-			fmt.Printf("Nodes checked until valid node found: %d - with list length: %d\n---\n", currentIndex+1, len(nodesToCheck))
+			// clean up for better ram usage
 			hasBeenChecked = map[int]bool{}
 			runtime.GC()
 			return pointMatrix[curLat][curLon]

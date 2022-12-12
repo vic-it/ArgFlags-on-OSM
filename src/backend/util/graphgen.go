@@ -9,6 +9,7 @@ import (
 )
 
 // math from here https://www.cmu.edu/biolphys/deserno/pdf/sphere_equi.pdf
+// generates a graph with equidistant nodes over a sphere with a coastline as basis
 func GenerateGraph(numberOfNodes int, coastline Coastline) Graph {
 	startTime := time.Now()
 	startTimeTotal := time.Now()
@@ -17,6 +18,7 @@ func GenerateGraph(numberOfNodes int, coastline Coastline) Graph {
 	var points [][]float64
 	//list but as 2d-ish grid for edge creation -> with index of points in "points[]"
 	var pointMatrix [][]int
+	// a bool matrix corresponding to the point matrix which just saves which nodes are in water
 	var isPointInWaterMatrix [][]bool
 	pi := math.Pi
 	//count of nodes
@@ -44,7 +46,7 @@ func GenerateGraph(numberOfNodes int, coastline Coastline) Graph {
 			point = append(point, lat)
 			points = append(points, point)
 			latList = append(latList, len(points)-1)
-			//bottle neck here
+			//CHECKS FOR EACH POINT IF IT IS IN WATER
 			z := IsPointInWater(point, coastline)
 			waterLatList = append(waterLatList, z)
 			count++
@@ -59,14 +61,17 @@ func GenerateGraph(numberOfNodes int, coastline Coastline) Graph {
 	}
 	fmt.Printf("Time to generate grid points: %.3fs\n", time.Since(startTimeTotal).Seconds())
 	fmt.Printf("%d points created\n", count)
+	//some garbage collection stuff because my RAM is not that good :'(
 	coastline.Edges = [][]int64{}
 	coastline.Nodes = nil
 	coastline.SortedLonEdgeList = []EdgeCoordinate{}
 	coastline = Coastline{}
 	runtime.GC()
+	// takes the generated nodes and adds edges too the graph
 	return GenerateEdges(points, pointMatrix, isPointInWaterMatrix, numberOfNodes)
 }
 
+// takes nodes and the above mentioned point matrices as input and creates valid edges for points that are indeed in water
 func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix [][]bool, numOfNodes int) Graph {
 	println("creating edges from points...")
 	startTime := time.Now()
@@ -78,7 +83,7 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 	for y := 0; y < len(indexMatrix); y++ {
 		latList := indexMatrix[y]
 		for x := 0; x < len(latList); x++ {
-			//add left edge
+			//add left edge - does not need seperate back edge creation as they are created equally for all
 			if pointsInWaterMatrix[y][x] {
 
 				if x == 0 {
@@ -93,7 +98,7 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 						fwEdgeDest = append(fwEdgeDest, indexMatrix[y][x-1])
 					}
 				}
-				//add right edge
+				//add right edge  - does not need seperate back edge creation as they are created equally for all
 				if x == len(latList)-1 {
 					if pointsInWaterMatrix[y][0] {
 
@@ -116,7 +121,7 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 				// 		fwEdgeDest = append(fwEdgeDest, indexMatrix[y-1][position])
 				// 	}
 				// }
-				//add above edge
+				//add above edge as well as a backwards edge "below edge" for the node above to this one
 				if y != len(indexMatrix)-1 {
 					position := int(math.Round(float64(x * len(indexMatrix[y+1]) / len(indexMatrix[y]))))
 					if pointsInWaterMatrix[y+1][position] {
@@ -129,20 +134,22 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 
 		}
 	}
-
+	// since the backedges are not necessarily in correct order for the offset list, we must first sort it and merge it to one (two) big list(s)
 	mergedEdgeSources, mergedEdgeDest, offsetList := mergeEdges(fwEdgeSources, fwEdgeDest, bwEdges, len(points))
 
 	fmt.Printf("Time to generate edges of grid: %.3fs\n", time.Since(startTime).Seconds())
 	startTime = time.Now()
+	//calculates the distance between two points (an edge)
 	distanceList = CalcEdgeDistances(points, mergedEdgeSources, mergedEdgeDest)
 
 	fmt.Printf("Time to calculate edge distances: %.3fs\n", time.Since(startTime).Seconds())
 	return Graph{Nodes: points, Sources: mergedEdgeSources, Targets: mergedEdgeDest, Weights: distanceList, Offsets: offsetList, NodeMatrix: indexMatrix, NodeInWaterMatrix: pointsInWaterMatrix, intendedNodeQuantity: numOfNodes}
 }
 
+// takes forward and backward edge lists and merges them into one "forward" edge list as well as an offset list
 func mergeEdges(fwsrc []int, fwdest []int, bwEdges [][]int, n int) ([]int, []int, []int) {
 	println("before sort")
-
+	// sort backward edge list ("below edges") by their source node ID, s.t. the offset can easily be calculated
 	sort.Sort(bySourceID(bwEdges))
 	var offsetList = make([]int, n)
 	var mergedSrc []int
@@ -182,6 +189,7 @@ func mergeEdges(fwsrc []int, fwdest []int, bwEdges [][]int, n int) ([]int, []int
 	return mergedSrc, mergedDest, offsetList
 }
 
+// self explanatory... really...
 func CalcEdgeDistances(points [][]float64, src []int, dest []int) []int {
 	var distances []int
 	for i, d := range src {

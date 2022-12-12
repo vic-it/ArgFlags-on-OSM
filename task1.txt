@@ -1,9 +1,0 @@
-Node: Point on surface (e.g. a park bench)
-	- id
-	- latitude
-	- longitude
-	- tags (optional)
-can be used for ways
-
-Way: Ordered list of 2 to 2000 nodes (polyline, e.g. rivers)
-Can be a line or an area (tag area=yes/no)

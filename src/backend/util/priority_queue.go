@@ -1,4 +1,4 @@
-// THIS CODE IS mostly COPIED FROM: https://pkg.go.dev/container/heap
+// THIS CODE IS mostly COPIED FROM: https://pkg.go.dev/container/heap (priority queue example)
 
 package util
 
@@ -8,10 +8,9 @@ import (
 
 // An Item is something we manage in a priority queue.
 type Item struct {
-	value    int // The value of the item; arbitrary.
-	priority int // The priority of the item in the queue.
-	// The index is needed by update and is maintained by the heap.Interface methods.
-	index int // The index of the item in the heap.
+	value    int // in our case this is the nodeID
+	priority int // distance/weights to the node
+	index    int // The index of the item in the heap. (not sure if this is needed)
 }
 
 // A PriorityQueue implements heap.Interface and holds Items.

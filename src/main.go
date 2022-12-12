@@ -31,6 +31,7 @@ func startServer() {
 	http.ListenAndServe(":8080", nil)
 }
 
+// checks for nearest valid neighbor node in water and returns this to the web interface
 func getPointHandler() http.HandlerFunc {
 	pointHandler := func(writer http.ResponseWriter, request *http.Request) {
 		urlQuery := request.URL.Query()
@@ -49,6 +50,7 @@ func getPointHandler() http.HandlerFunc {
 	return pointHandler
 }
 
+// calculates the shortest path between two nodes via dijkstra
 func getRouteHandler() http.HandlerFunc {
 	routingHandler := func(writer http.ResponseWriter, request *http.Request) {
 		urlQuery := request.URL.Query()
@@ -85,7 +87,7 @@ func getRouteString(src int64, dest int64) string {
 	return output
 }
 
-// todo
+// NOT IN USE!
 func getPreprocessingHandler() http.HandlerFunc {
 	proprocessHandler := func(writer http.ResponseWriter, request *http.Request) {
 		urlQuery := request.URL.Query()
@@ -102,7 +104,7 @@ func getPreprocessingHandler() http.HandlerFunc {
 	return proprocessHandler
 }
 
-// todo
+// NOT IN USE!
 func getDirectoryHandler() http.HandlerFunc {
 	directoryHandler := func(writer http.ResponseWriter, request *http.Request) {
 		urlQuery := request.URL.Query()
@@ -119,6 +121,7 @@ func getDirectoryHandler() http.HandlerFunc {
 	return directoryHandler
 }
 
+// NOT IN USE!
 func analyzeDirectory(basePath string) {
 	println("Reading directory...")
 
@@ -137,7 +140,7 @@ func initialize() {
 	graphPath := "../../data/graph.graph"
 	antarctica := "../../data/antarctica.osm.pbf"
 	global := "../../data/global.sec"
-	// prints "..." so we dont have to comment/uncomment all paths
+	// prints "..." so we dont have to comment/uncomment all paths because go is weird like that
 	fmt.Printf("%s%s%s\n", antarctica[0:1], global[0:1], graphPath[0:1])
 
 	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
@@ -153,7 +156,7 @@ func initialize() {
 
 	// PRINT TO GEOJSON BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	util.PrintPointsToGEOJSON(graph)
-	util.PrintEdgesToGEOJSON(graph)
+	//util.PrintPointsToGEOJSON(graph)
+	//util.PrintEdgesToGEOJSON(graph)
 	//-----------------------------------------------------
 }

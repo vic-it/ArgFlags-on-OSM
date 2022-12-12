@@ -13,18 +13,7 @@ func IsPointInWater(node []float64, coastline Coastline) bool {
 	//guaranteed edges are the edges that are definitely in the way and maybeedges are edges that are not guaranteed in the way but have exactly one node above our to check node
 	guaranteedEdges, maybeEdges := GetRelevantEdges(node, coastline)
 	guaranteedCount := len(guaranteedEdges)
-	// fmt.Printf("--------------------\n(%f/%f) (lat/lon) has the following guaranteed edges in the way:\n", node[1], node[0])
-	// for _, e := range guaranteedEdges {
-	// 	firstNodeLon := coastline.Nodes[coastline.Edges[e][0]][0]
-	// 	firstNodeLat := coastline.Nodes[coastline.Edges[e][0]][1]
-	// 	secondNodeLon := coastline.Nodes[coastline.Edges[e][1]][0]
-	// 	secondNodeLat := coastline.Nodes[coastline.Edges[e][1]][1]
-	// 	fmt.Printf("lat: [%f to %f]\n", firstNodeLat, secondNodeLat)
-	// 	fmt.Printf("lon: [%f to %f]\n-\n", firstNodeLon, secondNodeLon)
-	// }
-	// x := guaranteedCount
-	// fmt.Printf("count: %d\n", guaranteedCount)
-	// fmt.Printf("(%f/%f) (lat/lon) has the following maybe edges in the way:\n", node[1], node[0])
+	//checks edges of which only one node was above our node and the other was below (which makes the edge possibly diagonally above OR below)
 	for _, e := range maybeEdges {
 		firstNodeLon := coastline.Nodes[coastline.Edges[e][0]][0]
 		firstNodeLat := coastline.Nodes[coastline.Edges[e][0]][1]
@@ -40,7 +29,7 @@ func IsPointInWater(node []float64, coastline Coastline) bool {
 	return guaranteedCount%2 == 0
 }
 
-// returns the distance between two points in meters (float)
+// returns the distance between two points in kilometers (float) with standard formula
 func dist(src []float64, dest []float64) float64 {
 	PI := math.Pi
 
@@ -61,26 +50,7 @@ func dist(src []float64, dest []float64) float64 {
 	return meters
 }
 
-// transforms longitude and latitude into 3D coordinates
-// func threeD_coord(lon float64, lat float64) point_threeD {
-// 	rad := float64(6378137.0)
-// 	// Radius of the Earth (in meters)
-// 	cosLat := math.Cos(lat)
-// 	sinLat := math.Sin(lat)
-// 	cosLon := math.Cos(lon)
-// 	sinLon := math.Sin(lon)
-
-// 	x := rad * cosLon * sinLat
-// 	y := rad * sinLon * sinLat
-// 	z := rad * cosLat
-
-// 	anspoint := point_threeD{x, y, z}
-
-// 	return anspoint
-
-// }
-
-// return 1 if edge is in the way, 0 else
+// return 1 if edge is in the way (to north pole), 0 else
 func isEdgeInTheWay(p []float64, e [][]float64) int {
 	firstLon := e[1][0]
 	firstLat := e[0][1]
@@ -93,6 +63,7 @@ func isEdgeInTheWay(p []float64, e [][]float64) int {
 }
 
 // takes a whole basic format map as input, checks if one way starts where another ends -> merges them
+// not in use right now?
 func MergeWays(inputMap Basic) int {
 	mergeCounter := 0
 	ways := inputMap.ways
@@ -123,10 +94,10 @@ func PrintProgress(current int, max int, unit string, startTime time.Time) {
 	fmt.Printf("%.3fs - Water-checking nodes |  Progress: %2.2f%s%d%s%d %s\n\r", time.Since(startTime).Seconds(), 100*progress, "% - ", current, " out of ", max, unit)
 }
 
-// for input coordinates: estimate position of closest node on the grid, then breadth search until it finds a node that is on the grid and in water
+// for input coordinates: estimate indes of closest node on the grid, then breadth search until it finds a node that is on the grid and in water
 func GetClosestGridNode(lon float64, lat float64, graph Graph) int {
 	pi := math.Pi
-	// mirror variables in GenerateGraphPoints()
+	// more or less reverses equidistant point generation algorithm
 	a := 4.0 * pi / float64(graph.intendedNodeQuantity)
 	d := math.Sqrt(a)
 	Mv := math.Round(pi / d)
@@ -142,7 +113,6 @@ func GetClosestGridNode(lon float64, lat float64, graph Graph) int {
 	// p := 2.0 * pi * n / Mp
 	n := p * Mp / (2.0 * pi)
 	startingLon := int(math.Round(n))
-	//lonPos :=
 	return getClosestValidNode(startingLatPos, startingLon, graph)
 }
 
@@ -170,7 +140,7 @@ func getClosestValidNode(startingLat int, startingLon int, graph Graph) int {
 	}
 }
 
-// returns a list of neighbor points of an input point
+// returns a list of neighbor points of an input point, INCLUDING POINTS ON LAND!
 func getNeighbors(lat int, lon int, pointMatrix [][]int, hasBeenChecked map[int]bool) [][]int {
 	var neighborList [][]int
 
@@ -230,9 +200,8 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 	//all points sorted by longitude, stored together with the ID of the respective edge
 	sortedLonList := coastline.SortedLonEdgeList
 	//maximum longitude difference between two points of the same edge
-	//maxLonDiff := coastline.MaxLonDiffs[GetLonDiffIndex(len(coastline.MaxLonDiffs), node[1])]
 	maxLonDiff := coastline.maxLonDiff
-	//get relevant longitudes when point to check is not close to 180°/-180° longitude
+	//get relevant longitudes when point to check is not close to 180°/-180° longitude (within relevant longitude range - see "maxLonDiff")
 	if math.Abs(node[0])+maxLonDiff < 180 {
 		// left side: lon-maxdiff to lon
 		rawLeftStart := BinarySearchForID(node[0]-maxLonDiff, sortedLonList)
@@ -243,7 +212,7 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 		// make slices
 		leftList = sortedLonList[rawLeftStart:rawLeftEnd]
 		rightList = sortedLonList[rawRightStart:rawRightEnd]
-		//case we are too close to 180°, coming from left side
+		//case we are too close to 180°, coming from positive side
 	} else if node[0]+maxLonDiff >= 180 {
 		// left side from lon-maxdiff to node
 		rawLeftStart := BinarySearchForID(node[0]-maxLonDiff, sortedLonList)
@@ -258,7 +227,7 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 		leftList = sortedLonList[rawLeftStart:rawLeftEnd]
 		rightList = sortedLonList[rawRightStart1:rawRightEnd1]
 		rightList = append(rightList, sortedLonList[rawRightStart2:rawRightEnd2]...)
-		//case we are too close to -180° coming from right side
+		//case we are too close to -180° coming from negative side
 	} else {
 		// left side from -180 to lon
 		rawLeftStart1 := BinarySearchForID(-180, sortedLonList)
@@ -274,6 +243,7 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 		leftList = append(leftList, sortedLonList[rawLeftStart2:rawLeftEnd2]...)
 		rightList = sortedLonList[rawRightStart:rawRightEnd]
 	}
+	// intersects left and right list, s.t. only edges are left which intersect the longitude of the node to check
 	relevantLonEdges := edgeIntersectionOfCoordinatesIntoIDs(leftList, rightList)
 	var maxLatList []EdgeCoordinate
 	var minLatList []EdgeCoordinate
@@ -281,7 +251,7 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 		maxLatList = append(maxLatList, EdgeCoordinate{edgeID: index, coordinate: math.Max(nodes[edges[index][0]][1], nodes[edges[index][1]][1])})
 		minLatList = append(minLatList, EdgeCoordinate{edgeID: index, coordinate: math.Min(nodes[edges[index][0]][1], nodes[edges[index][1]][1])})
 	}
-
+	// sorts all relevant edges by latitude
 	sort.Sort(ByCoordinate(maxLatList))
 	sort.Sort(ByCoordinate(minLatList))
 
@@ -297,12 +267,13 @@ func GetRelevantEdges(node []float64, coastline Coastline) ([]int, []int) {
 	if idOfBiggerThanMinLat >= 0 {
 		relevantMinLat = maxLatList[idOfBiggerThanMinLat:]
 	}
+	//elements definitely in the way
 	var defAboveList []int
 	for _, e := range relevantMinLat {
+		// all relevant edges where both nodes are above our node
 		defAboveList = append(defAboveList, e.edgeID)
 	}
-	//elements definitely in the way
-	// defRelevantEdges := mergeIDLists(relevantLonEdges, defAboveList)
+	// a list of all edges where exactly one node is above our point and one is below, so it has to be checked manually
 	var maybeAboveList []int
 	if len(relevantMinLat) != len(relevantMaxLat) {
 		maybeAboveList = secondListMinusFirstList(relevantMinLat, relevantMaxLat)
@@ -422,7 +393,7 @@ func edgeIntersectionOfIDs(l1 []int, l2 []int) []int {
 	return c
 }
 
-// gives back an array of integers which are the IDs of the edges of the 2nd list, which dont appear in the first list
+// returns an array of integers which are the IDs of the edges of the 2nd list, which dont appear in the first list
 func secondListMinusFirstList(l1 []EdgeCoordinate, l2 []EdgeCoordinate) []int {
 	m := make(map[int]bool)
 	var c []int

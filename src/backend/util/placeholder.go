@@ -12,6 +12,7 @@ import (
 	"github.com/qedus/osmpbf"
 )
 
+// THIS FILE IS NOT IN USE YET -> PREPARATION FOR MORE EFFICIENT GRAPH GENERATION/POINT IN WATER TEST
 func PBFtoBASIC(path string) []way {
 	ways := make(map[int64]way) // -> (ID of way, [list of node IDs in way])
 	nodesPlaceHolder := make(map[int64]node)

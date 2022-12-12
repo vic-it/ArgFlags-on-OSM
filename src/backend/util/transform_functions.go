@@ -259,7 +259,7 @@ func PrintEdgesToGEOJSON(graph Graph) {
 	rawJSON = nil
 }
 
-// gets the pbf file from the path and outputs a list of all edges and 3 lists of edge id's sorted by e.g. max lat
+// Reads in the coastline files and preprocesses them into a Coastline format (see datatypes.go)
 func GetCoastline(path string) Coastline {
 	println("READING IN COASTLINES... (can take some time)")
 	startTime := time.Now()

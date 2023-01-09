@@ -110,7 +110,7 @@ func GraphToFile(graph Graph, path string) {
 func FileToGraph(path string) Graph {
 	startTime := time.Now()
 	graph := Graph{Nodes: [][]float64{}, Sources: []int{}, Targets: []int{}, Weights: []int{}, Offsets: []int{}, NodeMatrix: [][]int{}, NodeInWaterMatrix: [][]bool{}, intendedNodeQuantity: 0}
-	println("IMPORTING GRAPH FROM FILE...")
+	countOfNodesInWater := 0
 	f, err := os.Open(path)
 	check(err)
 	defer f.Close()
@@ -129,7 +129,7 @@ func FileToGraph(path string) Graph {
 				list := strings.Split(line, ",")
 				no, _ := strconv.Atoi(list[0])
 				ed, _ := strconv.Atoi(list[1])
-				fmt.Printf("Reading graph with: %d nodes and %d edges\n", no, ed)
+				fmt.Printf("Importing graph with: %d nodes and %d edges...\n", no, ed)
 			case 1: // lon,lat				(of all nodes)
 				list := strings.Split(line, ",")
 				lon, _ := strconv.ParseFloat(list[0], 64)
@@ -160,6 +160,9 @@ func FileToGraph(path string) Graph {
 				row := []bool{}
 				for _, boolAsString := range list {
 					isInWater, _ := strconv.ParseBool(boolAsString)
+					if isInWater {
+						countOfNodesInWater++
+					}
 					row = append(row, isInWater)
 				}
 				graph.NodeInWaterMatrix = append(graph.NodeInWaterMatrix, row)
@@ -168,6 +171,7 @@ func FileToGraph(path string) Graph {
 			}
 		}
 	}
+	graph.countOfWaterNodes = countOfNodesInWater
 	//END
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)

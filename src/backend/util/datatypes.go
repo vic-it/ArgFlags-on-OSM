@@ -43,14 +43,16 @@ type Graph struct {
 	Targets []int
 	// distances of edges
 	Weights []int
-	//offset for when edges for another node start
+	// offset for when edges for another node start
 	Offsets []int
 	// 2D matrix of nodes on the grid with the respective node IDs
 	NodeMatrix [][]int
 	// respective 2D matrix for the "PointMatrix" but instead of IDs it stores whether the node is in water or on land
 	NodeInWaterMatrix [][]bool
-	//number of nodes intended to create - usually close to len[nodes] but a bit higher
+	// number of nodes intended to create - usually close to len[nodes] but a bit higher
 	intendedNodeQuantity int
+	// number of nodes that are in water
+	countOfWaterNodes int
 }
 
 type Coastline struct {

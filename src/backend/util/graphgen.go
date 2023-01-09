@@ -13,6 +13,7 @@ import (
 func GenerateGraph(numberOfNodes int, coastline Coastline) Graph {
 	startTime := time.Now()
 	startTimeTotal := time.Now()
+	pointInWaterCount := 0
 	println("generating points...")
 	// simple list of all points
 	var points [][]float64
@@ -48,6 +49,9 @@ func GenerateGraph(numberOfNodes int, coastline Coastline) Graph {
 			latList = append(latList, len(points)-1)
 			//CHECKS FOR EACH POINT IF IT IS IN WATER
 			z := IsPointInWater(point, coastline)
+			if z {
+				pointInWaterCount++
+			}
 			waterLatList = append(waterLatList, z)
 			count++
 			if count%5000 == 0 {
@@ -68,11 +72,11 @@ func GenerateGraph(numberOfNodes int, coastline Coastline) Graph {
 	coastline = Coastline{}
 	runtime.GC()
 	// takes the generated nodes and adds edges too the graph
-	return GenerateEdges(points, pointMatrix, isPointInWaterMatrix, numberOfNodes)
+	return GenerateEdges(points, pointMatrix, isPointInWaterMatrix, numberOfNodes, pointInWaterCount)
 }
 
 // takes nodes and the above mentioned point matrices as input and creates valid edges for points that are indeed in water
-func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix [][]bool, numOfNodes int) Graph {
+func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix [][]bool, numOfNodes int, pointInWaterCount int) Graph {
 	println("creating edges from points...")
 	startTime := time.Now()
 	var fwEdgeSources []int
@@ -143,7 +147,7 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 	distanceList = CalcEdgeDistances(points, mergedEdgeSources, mergedEdgeDest)
 
 	fmt.Printf("Time to calculate edge distances: %.3fs\n", time.Since(startTime).Seconds())
-	return Graph{Nodes: points, Sources: mergedEdgeSources, Targets: mergedEdgeDest, Weights: distanceList, Offsets: offsetList, NodeMatrix: indexMatrix, NodeInWaterMatrix: pointsInWaterMatrix, intendedNodeQuantity: numOfNodes}
+	return Graph{Nodes: points, Sources: mergedEdgeSources, Targets: mergedEdgeDest, Weights: distanceList, Offsets: offsetList, NodeMatrix: indexMatrix, NodeInWaterMatrix: pointsInWaterMatrix, intendedNodeQuantity: numOfNodes, countOfWaterNodes: pointInWaterCount}
 }
 
 // takes forward and backward edge lists and merges them into one "forward" edge list as well as an offset list

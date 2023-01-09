@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"runtime"
 	"strconv"
-	"time"
 
 	"github.com/vic-it/OSM-FMI/src/backend/util"
 )
@@ -14,7 +13,7 @@ import (
 var graph util.Graph
 
 func main() {
-	println("\nStart!")
+	fmt.Printf("Starting")
 	// either creates a new graph entirely (can take some time) or imports a preprocessed graph (very fast)
 	initialize()
 	// starts server and web interface -> reachable at localhost:8080
@@ -22,13 +21,16 @@ func main() {
 }
 
 func startServer() {
-	println("starting http server...")
+	println("Starting HTTP server...")
 	http.Handle("/", http.FileServer(http.Dir("./frontend")))
 	http.HandleFunc("/getpoint", getPointHandler())
 	http.HandleFunc("/getroute", getRouteHandler())
 	http.HandleFunc("/directory", getDirectoryHandler())
 	http.HandleFunc("/preprocess", getPreprocessingHandler())
+	println("GUI available on: localhost:8080")
+	println("READY!\n-----------")
 	http.ListenAndServe(":8080", nil)
+
 }
 
 // checks for nearest valid neighbor node in water and returns this to the web interface
@@ -57,8 +59,8 @@ func getRouteHandler() http.HandlerFunc {
 		src, _ := strconv.ParseInt(urlQuery["src"][0], 0, 64)
 		dest, _ := strconv.ParseInt(urlQuery["dest"][0], 0, 64)
 
-		fmt.Printf("source node ID: %d\n", src)
-		fmt.Printf("destination node ID: %d\n", dest)
+		// fmt.Printf("source node ID: %d\n", src)
+		// fmt.Printf("destination node ID: %d\n", dest)
 
 		writer.WriteHeader(http.StatusOK)
 		//calc route below
@@ -71,11 +73,7 @@ func getRouteHandler() http.HandlerFunc {
 // if no route found -> -1y0
 // if route found -> distanceylon1zlat1xlon2zlat2x...
 func getRouteString(src int64, dest int64) string {
-	startTime := time.Now()
 	distance, path := util.CalculateDijkstra(graph, int(src), int(dest))
-	fmt.Printf("distance: %dm\n", distance)
-	fmt.Printf("nodes in path: %d\n", len(path))
-	fmt.Printf("Time to calculate route: %.3fs\n--\n", time.Since(startTime).Seconds())
 	output := fmt.Sprintf("%dy", distance)
 	for i, nodeID := range path {
 		if i == len(path)-1 {
@@ -145,7 +143,7 @@ func initialize() {
 
 	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	// createGraph(global, 1000000)
+	// createGraph(antarctica, 100000)
 	// util.GraphToFile(graph, graphPath)
 	//-----------------------------------------------------
 

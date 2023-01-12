@@ -2,14 +2,13 @@ package util
 
 import (
 	"container/heap"
-	"fmt"
 	"time"
 )
 
 // calculates the shortest path between two nodes (on a graph) via dijkstras algorithm
-func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int) {
+func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float64, float64, int) {
 
-	totalTime := time.Now()
+	//totalTime := time.Now()
 
 	initTime := time.Now()
 	nodesPoppedCounter := 0
@@ -17,29 +16,28 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int) {
 	prev := make(map[int]int)
 	visited := make(map[int]bool)
 	//priority queue datastructure (see priority_queue.go)
-	var prioQ = make(PriorityQueue, graph.countOfWaterNodes)
-	dist[sourceID] = 0
-	i := 0
+	var prioQ = make(PriorityQueue, 1)
 
 	for rowID, row := range graph.NodeInWaterMatrix {
 		for columnID, isInWater := range row {
 			nodeID := graph.NodeMatrix[rowID][columnID]
 			if isInWater {
-				if nodeID != sourceID {
-					//adds super high default distance
-					dist[nodeID] = 50000000
-				}
-				visited[nodeID] = false
+				dist[nodeID] = 50000000
 				prev[nodeID] = -1
-				//adds all nodes to the priority queue (heap)
-				prioQ[i] = &Item{value: nodeID, priority: dist[nodeID], index: i}
-				i++
+				//prioQ[i] = &Item{value: nodeID, priority: dist[nodeID], index: i}
 			}
 		}
 	}
-	heap.Init(&prioQ)
+	// for nodeID, _ := range graph.Nodes {
+	// 	dist[nodeID] = 50000000
+	// 	prev[nodeID] = -1
+	// }
 
-	fmt.Printf("Time to initialize search: %.3fs\n", time.Since(initTime).Seconds())
+	dist[sourceID] = 0
+	prioQ[0] = &Item{value: sourceID, priority: dist[sourceID], index: 0}
+	heap.Init(&prioQ)
+	initTimeDiff := time.Since(initTime).Seconds()
+	//fmt.Printf("Time to initialize search: %.3fs\n", initTimeDiff)
 	searchTime := time.Now()
 	for {
 		//gets "best" next node
@@ -78,12 +76,13 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int) {
 		currentNode = prev[currentNode]
 	}
 	//if distance is "-1" -> no path found,
-	fmt.Printf("Time to search route: %.3fs\n", time.Since(searchTime).Seconds())
-	fmt.Printf("Time total to calculate route: %.3fs\n", time.Since(totalTime).Seconds())
-	fmt.Printf("distance: %dm\n", dist[destID])
-	fmt.Printf("nodes in path: %d\n", len(path))
-	fmt.Printf("Nodes popped: %d\n--\n", nodesPoppedCounter)
-	return dist[destID], path
+	searchTimeDiff := time.Since(searchTime).Seconds()
+	// fmt.Printf("Time to search route: %.3fs\n", searchTimeDiff)
+	// fmt.Printf("Time total to calculate route: %.3fs\n", time.Since(totalTime).Seconds())
+	// fmt.Printf("distance: %dm\n", dist[destID])
+	// fmt.Printf("nodes in path: %d\n", len(path))
+	// fmt.Printf("Nodes popped: %d\n--\n", nodesPoppedCounter)
+	return dist[destID], path, initTimeDiff, searchTimeDiff, nodesPoppedCounter
 }
 
 // returns all neighbro node IDs connected to the input node

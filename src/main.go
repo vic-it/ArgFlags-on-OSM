@@ -17,6 +17,7 @@ func main() {
 	// either creates a new graph entirely (can take some time) or imports a preprocessed graph (very fast)
 	initialize()
 	// starts server and web interface -> reachable at localhost:8080
+	go testStuff()
 	startServer()
 }
 
@@ -73,7 +74,7 @@ func getRouteHandler() http.HandlerFunc {
 // if no route found -> -1y0
 // if route found -> distanceylon1zlat1xlon2zlat2x...
 func getRouteString(src int64, dest int64) string {
-	distance, path := util.CalculateDijkstra(graph, int(src), int(dest))
+	distance, path, _, _, _ := util.CalculateDijkstra(graph, int(src), int(dest))
 	output := fmt.Sprintf("%dy", distance)
 	for i, nodeID := range path {
 		if i == len(path)-1 {
@@ -157,4 +158,8 @@ func initialize() {
 	//util.PrintPointsToGEOJSON(graph)
 	//util.PrintEdgesToGEOJSON(graph)
 	//-----------------------------------------------------
+}
+
+func testStuff() {
+	util.TestAlgorithms(graph, 1000)
 }

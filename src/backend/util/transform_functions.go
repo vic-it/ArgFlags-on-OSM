@@ -243,6 +243,29 @@ func PrintPointsToGEOJSON(graph Graph) {
 	fmt.Printf("Time to read in coast lines: %.3fs\n", time.Since(startTime).Seconds())
 }
 
+func PrintPointsToGEOJSON2(graph Graph, nodePartitionMatrix [][]int) {
+	println("WRITING NODES TO GEOJSON")
+
+	startTime := time.Now()
+	points := [][]float64{}
+	for rowID, row := range nodePartitionMatrix {
+		for colID, partID := range row {
+			if partID%5 == 0 {
+				points = append(points, graph.Nodes[graph.NodeMatrix[rowID][colID]])
+			}
+		}
+	}
+	fc := geojson.NewMultiPointFeature(points...)
+	fc.SetProperty("x", "y")
+	rawJSON, _ := fc.MarshalJSON()
+	err := os.WriteFile("../../data/pointgrid.json", rawJSON, 0644)
+	if err != nil {
+		panic(err)
+	}
+	rawJSON = nil
+	fmt.Printf("Time to read in coast lines: %.3fs\n", time.Since(startTime).Seconds())
+}
+
 func PrintEdgesToGEOJSON(graph Graph) {
 	println("WRITING EDGES TO GEOJSON")
 	points := graph.Nodes

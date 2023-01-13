@@ -17,7 +17,7 @@ func main() {
 	// either creates a new graph entirely (can take some time) or imports a preprocessed graph (very fast)
 	initialize()
 	// starts server and web interface -> reachable at localhost:8080
-	go testStuff()
+	testStuff()
 	startServer()
 }
 
@@ -144,13 +144,13 @@ func initialize() {
 
 	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	// createGraph(antarctica, 100000)
-	// util.GraphToFile(graph, graphPath)
+	createGraph(antarctica, 13005)
+	//util.GraphToFile(graph, graphPath)
 	//-----------------------------------------------------
 
 	// IMPORT GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	graph = util.FileToGraph("../../data/graph.graph")
+	//graph = util.FileToGraph(graphPath)
 	//-----------------------------------------------------
 
 	// PRINT TO GEOJSON BY UNCOMMENTING BELOW:
@@ -161,5 +161,10 @@ func initialize() {
 }
 
 func testStuff() {
-	util.TestAlgorithms(graph, 1000)
+	util.PrintPointsToGEOJSON2(graph,
+		util.CreatePartitions(graph, 20, 5))
+	for _, row := range graph.NodeMatrix {
+		fmt.Printf("first lon: %3.3f - second lon: %3.3f\n", graph.Nodes[row[0]][0], graph.Nodes[row[1]][0])
+	}
+	// util.TestAlgorithms(graph, 1000)
 }

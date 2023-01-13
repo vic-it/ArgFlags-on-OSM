@@ -62,3 +62,12 @@ type Coastline struct {
 	MaxLonDiffs       []float64
 	maxLonDiff        float64
 }
+
+type ArcFlagInfo struct {
+	PartitionMatrix         [][]int
+	NumberOfTotalPartitions int
+	NodePartitions          map[int64][]int64
+}
+type Partition struct {
+	nodeMatrix [][]int
+}

@@ -144,13 +144,13 @@ func initialize() {
 
 	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	createGraph(antarctica, 13005)
+	//createGraph(antarctica, 1000)
 	//util.GraphToFile(graph, graphPath)
 	//-----------------------------------------------------
 
 	// IMPORT GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	//graph = util.FileToGraph(graphPath)
+	graph = util.FileToGraph(graphPath)
 	//-----------------------------------------------------
 
 	// PRINT TO GEOJSON BY UNCOMMENTING BELOW:
@@ -161,10 +161,18 @@ func initialize() {
 }
 
 func testStuff() {
-	util.PrintPointsToGEOJSON2(graph,
-		util.CreatePartitions(graph, 20, 5))
-	for _, row := range graph.NodeMatrix {
-		fmt.Printf("first lon: %3.3f - second lon: %3.3f\n", graph.Nodes[row[0]][0], graph.Nodes[row[1]][0])
-	}
-	// util.TestAlgorithms(graph, 1000)
+	// util.PrintPointsToGEOJSON2(graph,
+	// 	util.CreatePartitions(graph, 20, 10))
+	// for _, row := range graph.NodeMatrix {
+	// 	fmt.Printf("first lon: %3.3f - second lon: %3.3f\n", graph.Nodes[row[0]][0], graph.Nodes[row[1]][0])
+	// }
+	arcFlags, npm := util.PreprocessArcFlags(graph, 8, 3)
+	util.TestAlgorithms(graph, npm, arcFlags, 1000)
+	// for _, row := range  util.PreprocessArcFlags(graph, 8, 1){
+	// 	fmt.Printf("[")
+	// 	for _, val := range row {
+	// 		fmt.Printf("%t, ", val)
+	// 	}
+	// 	fmt.Printf("]\n")
+	// }
 }

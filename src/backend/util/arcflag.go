@@ -34,7 +34,7 @@ func PreprocessArcFlags(graph Graph, numOfRows int, numOfPoleRowPartitions int) 
 	altTime := time.Now()
 
 	//calculate arc flags in batches of "maxThreads" at once until all boundary nodes went through
-	calcArcDijkstraForNode(graph, 551230, arcFlags, numOfPartitions, nodePartitionMatrix, false)
+	// calcArcDijkstraForNode(graph, 51230, arcFlags, numOfPartitions, nodePartitionMatrix, false)
 	// calcArcDijkstraForNode(graph, 510, arcFlags, numOfPartitions, nodePartitionMatrix, false)
 	// calcArcDijkstraForNode(graph, 54320, arcFlags, numOfPartitions, nodePartitionMatrix, false)
 	// calcArcDijkstraForNode(graph, 521360, arcFlags, numOfPartitions, nodePartitionMatrix, false)
@@ -62,7 +62,10 @@ func PreprocessArcFlags(graph Graph, numOfRows int, numOfPoleRowPartitions int) 
 		ctr++
 		start := maxThreads * (ctr - 1)
 		end := maxThreads * ctr
-		printPreProcessProgress(start, len(boundaryNodeIDs))
+		if ctr%10 == 1 {
+			printPreProcessProgress(start, len(boundaryNodeIDs))
+		}
+
 		if len(boundaryNodeIDs) < end {
 			end = len(boundaryNodeIDs)
 		}
@@ -76,8 +79,8 @@ func PreprocessArcFlags(graph Graph, numOfRows int, numOfPoleRowPartitions int) 
 		}
 	}
 
+	ensureBidirectionality(graph, arcFlags)
 	fmt.Printf("Time to generate arc flags: %.3fs\n", time.Since(totalTime).Seconds())
-
 	return arcFlags, nodePartitionMatrix
 }
 func createPartitions(graph Graph, numOfRows int, numOfPoleRowPartitions int) ([][]int, int) {
@@ -199,19 +202,23 @@ func getBoundaryNodeIDS(graph Graph, nodePartitionMatrix [][]int) []int {
 }
 
 func calcArcDijkstraForNode(graph Graph, sourceID int, arcFlags [][]bool, numOfPartitions int, nodePartitionMatrix [][]int, test bool) {
+
+	// totalTime := time.Now()
 	var distance []int
 	//here prev means previous edgeID
 	var prev []int
+	//sorts all popped nodes by their distance to source node, starting at the source, going to the furthest (actually reachable) node
+	var ascendingPoppedList []int
+	//list of true/false for nodeID - true if node was in sub-tree of previously checked path -> path for this node also checked
+	var checked []bool
 	nodesPoppedCounter := 0
 	//priority queue datastructure (see priority_queue.go)
 	var prioQ = make(PriorityQueue, 1)
 
-	for id, _ := range prev {
-		prev[id] = -1
-	}
 	for i := 0; i < len(graph.Nodes); i++ {
 		prev = append(prev, -1)
 		distance = append(distance, 50000000)
+		checked = append(checked, false)
 	}
 
 	distance[sourceID] = 0
@@ -220,6 +227,10 @@ func calcArcDijkstraForNode(graph Graph, sourceID int, arcFlags [][]bool, numOfP
 	for {
 		//gets "best" next node
 		node := heap.Pop(&prioQ).(*Item)
+		if distance[node.value] >= 50000000 {
+			break
+		}
+		ascendingPoppedList = append(ascendingPoppedList, node.value)
 
 		nodesPoppedCounter++
 		// if we are at the destination then we break!
@@ -228,7 +239,7 @@ func calcArcDijkstraForNode(graph Graph, sourceID int, arcFlags [][]bool, numOfP
 		neighbors := getArcFlagPreProcessNeighbors(graph.Targets, graph.Offsets, graph.Weights, node.value)
 		for _, neighbor := range neighbors {
 			alt := distance[node.value] + neighbor[1]
-			// neighbor [0] is target node ID
+			// neighbor [0] is target node ID, neighbor[2] is ID of edge which goes to this node
 			if alt < distance[neighbor[0]] {
 				distance[neighbor[0]] = alt
 				prev[neighbor[0]] = neighbor[2]
@@ -241,25 +252,44 @@ func calcArcDijkstraForNode(graph Graph, sourceID int, arcFlags [][]bool, numOfP
 		}
 	}
 	//maybe not over all edges multiple times????????? array for each node of flags for this node-- maybe als only over boundary nodes and then do nonboundary nodes afterwards alltogether
-	for id, val := range prev {
-		if val >= 0 {
-			addArcFlags(graph, id, arcFlags, prev, numOfPartitions, nodePartitionMatrix)
+	// for id, val := range prev {
+	// 	if val >= 0 {
+	// 		addArcFlags(graph, id, arcFlags, prev, numOfPartitions, nodePartitionMatrix)
+	// 	}
+	// }
+	// fmt.Printf("time to calc full dijkstra: %.3fs\n", time.Since(totalTime).Seconds())
+	x := 0
+	// for _, nodeID := range ascendingPoppedList {
+	// 	if prev[nodeID] >= 0 && !checked[nodeID] {
+	// 		addArcFlags(graph, nodeID, arcFlags, prev, numOfPartitions, nodePartitionMatrix, checked)
+	// 		x++
+	// 	}
+	// }
+	for i := len(ascendingPoppedList) - 1; i >= 0; i-- {
+		nodeID := ascendingPoppedList[i]
+		if prev[nodeID] >= 0 && !checked[nodeID] {
+			addArcFlags(graph, nodeID, arcFlags, prev, numOfPartitions, nodePartitionMatrix, checked)
+			x++
 		}
 	}
+
+	// fmt.Printf("nodes backwards iterated through: %d\n", x)
 	if test {
 		defer wg.Done()
 	}
 }
 
-func addArcFlags(graph Graph, nodeID int, arcFlags [][]bool, prev []int, numOfPartitions int, nodePartitionMatrix [][]int) {
+func addArcFlags(graph Graph, nodeID int, arcFlags [][]bool, prev []int, numOfPartitions int, nodePartitionMatrix [][]int, checkList []bool) {
 	currNode := nodeID
 	partitionFlags := []bool{}
 	edgeIDList := []int{}
 	//fill empty partition flags
-	for i := 0; i < numOfPartitions; i++ {
+	for i := 0; i <= numOfPartitions; i++ {
 		partitionFlags = append(partitionFlags, false)
 	}
+	//collect all edges we go through to get to source node, as well as all partitions we move through (all flags we need to set to 1)
 	for prev[currNode] >= 0 {
+		checkList[currNode] = true
 		row, col := GetNodeMatrixIndex(currNode, graph)
 		partitionFlags[nodePartitionMatrix[row][col]] = true
 		edgeIDList = append(edgeIDList, prev[currNode])
@@ -392,4 +422,21 @@ func getArcFlagRouteNeighbors(destinations []int, offsets []int, weights []int, 
 		}
 	}
 	return neighborIDList
+}
+
+func ensureBidirectionality(graph Graph, arcFlags [][]bool) {
+	println("Ensuring bi-directionality of arc flags...")
+	timer := time.Now()
+	for edgeID, flags := range arcFlags {
+		reverseEdgeID := getReverseEdgeID(graph, edgeID)
+		if reverseEdgeID >= 0 {
+			for partitionID, flag := range flags {
+				if flag {
+					arcFlags[reverseEdgeID][partitionID] = true
+				}
+			}
+		}
+	}
+	getReverseEdgeID(graph, 200)
+	fmt.Printf("Time to ensure bi-directionality of arc flags: %.3fs\n", time.Since(timer).Seconds())
 }

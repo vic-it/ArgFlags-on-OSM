@@ -52,7 +52,7 @@ func testDijkstra(graph Graph, n int, paths [][]int) {
 			maxNodesPopped = nodesPopped
 		}
 
-		if i%1000 == 0 {
+		if i%100 == 0 {
 			printTestProgress("Dijkstra", i, n)
 		}
 	}

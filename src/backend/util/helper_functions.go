@@ -422,3 +422,22 @@ func (a ByCoordinate) Less(i, j int) bool {
 func (a ByCoordinate) Swap(i, j int) {
 	a[i], a[j] = a[j], a[i]
 }
+
+func getReverseEdgeID(graph Graph, edgeID int) int {
+	sourceNodeID := graph.Sources[edgeID]
+	targetNodeID := graph.Targets[edgeID]
+	reverseOffsetStart := graph.Offsets[targetNodeID]
+	for i := 0; i <= 5; i++ {
+		if reverseOffsetStart+i > len(graph.Sources)-1 {
+
+			println("no back edge?")
+			return -1
+		}
+		if graph.Targets[reverseOffsetStart+i] == sourceNodeID && graph.Sources[reverseOffsetStart+i] == targetNodeID {
+			// fmt.Printf("input edge: %d to %d, reverse edge: %d to %d\n", sourceNodeID, targetNodeID, graph.Sources[reverseOffsetStart+i], graph.Targets[reverseOffsetStart+i])
+			return reverseOffsetStart + i
+		}
+	}
+	println("huh")
+	return -1
+}

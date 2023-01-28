@@ -144,13 +144,13 @@ func initialize() {
 
 	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	createGraph(antarctica, 100000)
+	//createGraph(antarctica, 50000)
 	//util.GraphToFile(graph, graphPath)
 	//-----------------------------------------------------
 
 	// IMPORT GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	//graph = util.FileToGraph(graphPath)
+	graph = util.FileToGraph(graphPath)
 	//-----------------------------------------------------
 
 	// PRINT TO GEOJSON BY UNCOMMENTING BELOW:
@@ -166,7 +166,8 @@ func testStuff() {
 	// for _, row := range graph.NodeMatrix {
 	// 	fmt.Printf("first lon: %3.3f - second lon: %3.3f\n", graph.Nodes[row[0]][0], graph.Nodes[row[1]][0])
 	// }
-	arcFlags, npm := util.PreprocessArcFlags(graph, 6, 2)
+	arcFlags, npm := util.PreprocessArcFlags(graph, 15, 15)
+
 	util.TestAlgorithms(graph, npm, arcFlags, 10000)
 	// for _, row := range  util.PreprocessArcFlags(graph, 8, 1){
 	// 	fmt.Printf("[")

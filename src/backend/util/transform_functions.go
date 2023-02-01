@@ -180,51 +180,110 @@ func FileToGraph(path string) Graph {
 	return graph
 }
 
-// func BASICtoGEOJSONFile(basicData Basic) {
-// 	//save basic data in geojson format -> as file (.json)
-// 	var polygonList [][][]float64
-// 	wayCtr := 0
-// 	nodeCtr := 0
-// 	for _, wayx := range basicData.ways {
-// 		//increment way counter
-// 		wayCtr++
-// 		//store this way as polygon
-// 		var polygon [][]float64
-// 		for _, nodex := range wayx.nodes {
-// 			//increment node counter
-// 			nodeCtr++
-// 			var nodeAsArray []float64
-// 			nodeAsArray = append(nodeAsArray, basicData.Nodes[nodex].lon)
-// 			nodeAsArray = append(nodeAsArray, basicData.Nodes[nodex].lat)
-// 			// prepare node s.t. garbage collection will clean it up
-// 			polygon = append(polygon, nodeAsArray)
-// 			//basicData.nodes[nodex] = node{}
+// writes a arcflag data a file with the following format:
+//
+//	(ctr = 0)
+//
+// numOfPartitions
+// x (ctr = 1)
+// nodeID0ofRow,nodeID1ofRow,... (for all nodes in this PartitionNodeMatrix - repeat for all rows)
+// x (ctr = 2)
+// Arcflags1,...			(analogous to nodeid matrix)
+// z (end)
+func ArcFlagsToFile(arcData ArcData, path string) {
+	startTime := time.Now()
+	println("WRITING ArcFlags TO FILE...")
 
-// 			// force garbage collection -> else memory overruns
-// 			if nodeCtr%10000 == 0 {
-// 				runtime.GC()
-// 			}
+	f, err := os.Create(path)
+	check(err)
+	defer f.Close()
+	w := bufio.NewWriter(f)
 
-// 		}
-// 		polygonList = append(polygonList, polygon)
-// 		//prepare way s.t. garbage collection will clean it
-// 		wayx = way{}
-// 		// print geojson progress aswell as force garbage collection
-// 		if wayCtr%10000 == 0 {
-// 			PrintProgress(wayCtr, len(basicData.ways), "ways")
-// 			runtime.GC()
-// 		}
-// 	}
-// 	g := geojson.NewMultiPolygonGeometry(polygonList)
-// 	rawJSON, _ := g.MarshalJSON()
-// 	err := os.WriteFile("../../data/geojson.json", rawJSON, 0644)
-// 	println("geojson file written to: '../../data/geojson.json'")
-// 	fmt.Printf("%d out of %d nodes were processed\n", nodeCtr, len(basicData.Nodes))
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	rawJSON = nil
-// }
+	//WRITE HERE
+
+	w.WriteString(fmt.Sprintf("%d\n", arcData.numberOfPartitions))
+	w.WriteString("x\n")
+
+	//WRITE NODE PARTITION MATRIX
+	for _, row := range arcData.nodePartitionMatrix {
+		rowString := ""
+		for i, partitionID := range row {
+			if i < len(row)-1 {
+				rowString += fmt.Sprintf("%d,", partitionID)
+			} else {
+				rowString += fmt.Sprintf("%d\n", partitionID)
+			}
+		}
+		w.WriteString(rowString)
+	}
+	w.WriteString("x\n")
+	//WRITE ARC FLAGS
+	for _, row := range arcData.ArcFlags {
+		rowString := ""
+		for i, flag := range row {
+			if i < len(row)-1 {
+				rowString += fmt.Sprintf("%t,", flag)
+			} else {
+				rowString += fmt.Sprintf("%t\n", flag)
+			}
+		}
+		w.WriteString(rowString)
+	}
+	//END
+	w.WriteString("z")
+	w.Flush()
+
+	fmt.Printf("Time to write graph to file: %.3fs\n", time.Since(startTime).Seconds())
+}
+
+// imports a graph from a .graph file
+func FileToArcData(path string) ArcData {
+	startTime := time.Now()
+	arcData := ArcData{}
+	f, err := os.Open(path)
+	check(err)
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	ctr := 0
+	//READ GRAPH HERE
+	for scanner.Scan() {
+		line := strings.TrimRight(scanner.Text(), "\n")
+		if line == "x" {
+			ctr++
+		} else if line == "z" {
+			break
+		} else {
+			switch ctr {
+			case 0: //READ NUM OF NODES/EDGES
+				arcData.numberOfPartitions, _ = strconv.Atoi(line)
+				fmt.Printf("Importing ArcFlag Data with: %d partitions...\n", arcData.numberOfPartitions)
+			case 1: // partitionOfNode1, partitionOfNode2,...
+				list := strings.Split(line, ",")
+				row := []int{}
+				for _, stringID := range list {
+					partitionID, _ := strconv.Atoi(stringID)
+					row = append(row, partitionID)
+				}
+				arcData.nodePartitionMatrix = append(arcData.nodePartitionMatrix, row)
+			case 2: // arcflags
+				list := strings.Split(line, ",")
+				row := []bool{}
+				for _, boolAsString := range list {
+					flag, _ := strconv.ParseBool(boolAsString)
+
+					row = append(row, flag)
+				}
+				arcData.ArcFlags = append(arcData.ArcFlags, row)
+			}
+		}
+	}
+	//END
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Time to read graph from file: %.3fs\n", time.Since(startTime).Seconds())
+	return arcData
+}
 
 func PrintPointsToGEOJSON(graph Graph) {
 	println("WRITING NODES TO GEOJSON")

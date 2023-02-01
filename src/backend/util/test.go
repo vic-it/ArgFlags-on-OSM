@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-func TestAlgorithms(graph Graph, nodePartitionMatrix [][]int, arcFlags [][]bool, numberOfPaths int) {
+func TestAlgorithms(graph Graph, arcData ArcData, numberOfPaths int) {
 	paths := generateTestPaths(graph, numberOfPaths)
 	testDijkstra(graph, numberOfPaths, paths)
-	testArcFlagDijkstra(graph, numberOfPaths, paths, nodePartitionMatrix, arcFlags)
+	testArcFlagDijkstra(graph, numberOfPaths, paths, arcData)
 }
 func testDijkstra(graph Graph, n int, paths [][]int) {
 	fmt.Printf("Starting Dijkstra test for %d routes...\n", n)
@@ -67,7 +67,7 @@ func testDijkstra(graph Graph, n int, paths [][]int) {
 	fmt.Printf("Number of routes with no viable path: %d\n-------\n", fails)
 }
 
-func testArcFlagDijkstra(graph Graph, n int, paths [][]int, nodePartitionMatrix [][]int, arcFlags [][]bool) {
+func testArcFlagDijkstra(graph Graph, n int, paths [][]int, arcData ArcData) {
 	fmt.Printf("Starting Arc Flags test for %d routes...\n", n)
 	totalTime := time.Now()
 	fails := 0
@@ -81,6 +81,8 @@ func testArcFlagDijkstra(graph Graph, n int, paths [][]int, nodePartitionMatrix 
 	maxSearchTime := 0.0
 	maxNodesPopped := 0
 	maxPathLength := 0
+	arcFlags := arcData.ArcFlags
+	nodePartitionMatrix := arcData.nodePartitionMatrix
 	for i := 0; i < n; i++ {
 		dist, path, initTime, searchTime, nodesPopped := CalculateArcFlagDijkstra(graph, paths[i][0], paths[i][1], arcFlags, nodePartitionMatrix)
 		if dist >= 0 {

@@ -55,6 +55,12 @@ type Graph struct {
 	countOfWaterNodes int
 }
 
+type ArcData struct {
+	ArcFlags            [][]bool
+	nodePartitionMatrix [][]int
+	numberOfPartitions  int
+}
+
 type Coastline struct {
 	Nodes             map[int64][]float64
 	Edges             [][]int64

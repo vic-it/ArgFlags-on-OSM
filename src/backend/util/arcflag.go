@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"fmt"
 	"math"
+	"runtime"
 	"sort"
 	"sync"
 	"time"
@@ -12,7 +13,7 @@ import (
 var wg sync.WaitGroup
 var processTimer time.Time
 
-func PreprocessArcFlags(graph Graph, numOfRows int, numOfPoleRowPartitions int) ([][]bool, [][]int) {
+func PreprocessArcFlags(graph Graph, numOfRows int, numOfPoleRowPartitions int) ArcData {
 	println("Generating arc flags...")
 	maxThreads := 8
 	fmt.Printf("Preprocessing on %d threads...\n", maxThreads)
@@ -27,72 +28,34 @@ func PreprocessArcFlags(graph Graph, numOfRows int, numOfPoleRowPartitions int) 
 		}
 		arcFlags = append(arcFlags, tmp)
 	}
-
-	//test thing
-	aTime := time.Now()
-	MultiSourceArcFlagPreprocess(graph, 13, arcFlags, numOfPartitions, nodePartitionMatrix)
-
-	fmt.Printf("time for one test batch: %.3fs\n", time.Since(aTime).Seconds())
-
-	aTime = time.Now()
-	for _, idx := range getBoundaryNodesOfPartition(graph, nodePartitionMatrix, 13) {
-		singleSourceArcFlagPreprocess(graph, idx, arcFlags, numOfPartitions, nodePartitionMatrix, false)
-	}
-
-	fmt.Printf("time for one test batch2: %.3fs\n", time.Since(aTime).Seconds())
-	//boundaryNodeIDs := getBoundaryNodeIDS(graph, nodePartitionMatrix)
-
-	processTimer = time.Now()
+	// singleSourceArcFlagPreprocess(graph, 20, arcFlags, numOfPartitions, nodePartitionMatrix, false)
+	boundaryNodeIDs := getBoundaryNodeIDS(graph, nodePartitionMatrix)
 	ctr := 0
-
+	processTimer = time.Now()
 	totalTime := time.Now()
-	//uncomment below
 	println("Starting multithreading")
 	for {
 		ctr++
 		start := maxThreads * (ctr - 1)
 		end := maxThreads * ctr
+		if ctr%120 == 1 {
+			printPreProcessProgress(start, len(boundaryNodeIDs))
+		}
 
-		printPreProcessProgress(start, numOfPartitions)
-
-		if numOfPartitions < end {
-			end = numOfPartitions
+		if len(boundaryNodeIDs) < end {
+			end = len(boundaryNodeIDs)
 		}
 		for i := start; i < end; i++ {
 			wg.Add(1)
-			go MultiSourceArcFlagPreprocess(graph, i, arcFlags, numOfPartitions, nodePartitionMatrix)
+			go singleSourceArcFlagPreprocess(graph, boundaryNodeIDs[i], arcFlags, numOfPartitions, nodePartitionMatrix, true)
 		}
 		wg.Wait()
-		if end >= numOfPartitions {
+		if end >= len(boundaryNodeIDs) {
 			break
 		}
 	}
-
-	ensureBidirectionality(graph, arcFlags)
-	// println("Starting multithreading")
-	// for {
-	// 	ctr++
-	// 	start := maxThreads * (ctr - 1)
-	// 	end := maxThreads * ctr
-	// 	if ctr%10 == 1 {
-	// 		//printPreProcessProgress(start, len(boundaryNodeIDs))
-	// 	}
-
-	// 	if len(boundaryNodeIDs) < end {
-	// 		end = len(boundaryNodeIDs)
-	// 	}
-	// 	for i := start; i < end; i++ {
-	// 		wg.Add(1)
-	// 		go singleSourceArcFlagPreprocess(graph, boundaryNodeIDs[i], arcFlagsOld, numOfPartitions, nodePartitionMatrix, true)
-	// 	}
-	// 	wg.Wait()
-	// 	if end >= len(boundaryNodeIDs) {
-	// 		break
-	// 	}
-	// }
-	// ensureBidirectionality(graph, arcFlagsOld)
 	fmt.Printf("Time to generate arc flags: %.3fs\n", time.Since(totalTime).Seconds())
-	return arcFlags, nodePartitionMatrix
+	return ArcData{arcFlags, nodePartitionMatrix, numOfPartitions}
 }
 func createPartitions(graph Graph, numOfRows int, numOfPoleRowPartitions int) ([][]int, int) {
 	// nodeCount := len(graph.Nodes)
@@ -238,15 +201,17 @@ func getBoundaryNodesOfPartition(graph Graph, nodePartitionMatrix [][]int, parti
 
 // used to preprocess distances to set the arc flag
 func singleSourceArcFlagPreprocess(graph Graph, sourceID int, arcFlags [][]bool, numOfPartitions int, nodePartitionMatrix [][]int, test bool) {
-
-	// totalTime := time.Now()
+	hasBeenPopped := make([]bool, len(graph.Nodes))
+	//totalTime := time.Now()
 	var distance []int
 	//here prev means previous edgeID
 	var prev []int
+	// for each node, we save all partitions that were "touched" >before< opening this node -> these are the flags of the backwards edge, as soon as target node of edge (id of the prev node) is opened
+	var partitionsVisited [][]bool
 	//sorts all popped nodes by their distance to source node, starting at the source, going to the furthest (actually reachable) node
-	var ascendingPoppedList []int
+	//var ascendingPoppedList []int
 	//list of true/false for nodeID - true if node was in sub-tree of previously checked path -> path for this node also checked
-	var checked []bool
+	//var checked []bool
 	nodesPoppedCounter := 0
 	//priority queue datastructure (see priority_queue.go)
 	var prioQ = make(PriorityQueue, 1)
@@ -254,19 +219,49 @@ func singleSourceArcFlagPreprocess(graph Graph, sourceID int, arcFlags [][]bool,
 	for i := 0; i < len(graph.Nodes); i++ {
 		prev = append(prev, -1)
 		distance = append(distance, 50000000)
-		checked = append(checked, false)
+		//checked = append(checked, false)
+		partitionsVisited = append(partitionsVisited, make([]bool, numOfPartitions))
 	}
 
+	//fmt.Printf("Time to complete preprocessing: %.3fs\n", time.Since(totalTime).Seconds())
 	distance[sourceID] = 0
 	prioQ[0] = &Item{value: sourceID, priority: distance[sourceID], index: 0}
 	heap.Init(&prioQ)
 	for {
 		//gets "best" next node
+		if prioQ.Len() < 1 {
+			break
+		}
 		node := heap.Pop(&prioQ).(*Item)
+		thisNodeID := node.value
+		if hasBeenPopped[thisNodeID] {
+			continue
+		}
 		if distance[node.value] >= 50000000 {
 			break
 		}
-		ascendingPoppedList = append(ascendingPoppedList, node.value)
+		hasBeenPopped[thisNodeID] = true
+		if prev[thisNodeID] >= 0 {
+			// if prev edge is not -1
+			row, col := GetNodeMatrixIndex(thisNodeID, graph)
+			thisNodesPartition := nodePartitionMatrix[row][col]
+			// node popped -> prev is final -> save visited notes of prev + current one
+			//add all previously visited flags to this node
+			prevNodeID := graph.Sources[prev[thisNodeID]]
+			// -> add (stored) arcflags for reverseEdgeOf(prev)
+			reverseEdgeID := getReverseEdgeID(graph, prev[thisNodeID])
+			//println(len(partitionsVisited[thisNodeID]))
+			//println(numOfPartitions)
+			for i, flag := range partitionsVisited[prevNodeID] {
+				arcFlags[reverseEdgeID][i] = flag || arcFlags[reverseEdgeID][i]
+
+			}
+			partitionsVisited[thisNodeID] = partitionsVisited[prevNodeID]
+			partitionsVisited[thisNodeID][thisNodesPartition] = true
+
+		}
+
+		//
 
 		nodesPoppedCounter++
 		// if we are at the destination then we break!
@@ -283,32 +278,20 @@ func singleSourceArcFlagPreprocess(graph Graph, sourceID int, arcFlags [][]bool,
 				heap.Push(&prioQ, &Item{value: neighbor[0], priority: alt, index: neighbor[0]})
 			}
 		}
-		if prioQ.Len() < 1 {
-			break
-		}
+
 	}
-	//maybe not over all edges multiple times????????? array for each node of flags for this node-- maybe als only over boundary nodes and then do nonboundary nodes afterwards alltogether
-	// for id, val := range prev {
-	// 	if val >= 0 {
-	// 		addArcFlags(graph, id, arcFlags, prev, numOfPartitions, nodePartitionMatrix)
-	// 	}
-	// }
-	// fmt.Printf("time to calc full dijkstra: %.3fs\n", time.Since(totalTime).Seconds())
-	x := 0
-	// for _, nodeID := range ascendingPoppedList {
+
+	//fmt.Printf("Time to complete preprocessing + dijkstra: %.3fs\n", time.Since(totalTime).Seconds())
+	//x := 0
+	// for i := len(ascendingPoppedList) - 1; i >= 0; i-- {
+	// 	nodeID := ascendingPoppedList[i]
 	// 	if prev[nodeID] >= 0 && !checked[nodeID] {
 	// 		addArcFlags(graph, nodeID, arcFlags, prev, numOfPartitions, nodePartitionMatrix, checked)
 	// 		x++
 	// 	}
 	// }
-	for i := len(ascendingPoppedList) - 1; i >= 0; i-- {
-		nodeID := ascendingPoppedList[i]
-		if prev[nodeID] >= 0 && !checked[nodeID] {
-			addArcFlags(graph, nodeID, arcFlags, prev, numOfPartitions, nodePartitionMatrix, checked)
-			x++
-		}
-	}
 
+	//fmt.Printf("Time to complete one node: %.3fs\n", time.Since(totalTime).Seconds())
 	// fmt.Printf("nodes backwards iterated through: %d\n", x)
 	if test {
 		defer wg.Done()
@@ -372,6 +355,7 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcFlags []
 	destPartition := 0
 	initTime := time.Now()
 	nodesPoppedCounter := 0
+
 	//priority queue datastructure (see priority_queue.go)
 	var prioQ = make(PriorityQueue, 1)
 
@@ -411,7 +395,10 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcFlags []
 		// if we are at the destination then we break!
 
 		// gets all neighbor/connected nodes
-		neighbors := getArcFlagRouteNeighbors(graph.Targets, graph.Offsets, graph.Weights, node.value, arcFlags, destPartition)
+
+		row, col := GetNodeMatrixIndex(node.value, graph)
+		currentNodePartition := nodePartitionMatrix[row][col]
+		neighbors := getArcFlagRouteNeighbors(graph.Targets, graph.Offsets, graph.Weights, node.value, arcFlags, destPartition, currentNodePartition)
 		for _, neighbor := range neighbors {
 			alt := distance[node.value] + neighbor[1]
 			// neighbor [0] is target node ID
@@ -447,7 +434,7 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcFlags []
 }
 
 // returns the neighbors by their [nodeID, distance]
-func getArcFlagRouteNeighbors(destinations []int, offsets []int, weights []int, nodeID int, arcFlags [][]bool, destPartition int) [][]int {
+func getArcFlagRouteNeighbors(destinations []int, offsets []int, weights []int, nodeID int, arcFlags [][]bool, destPartition int, currentNodePartition int) [][]int {
 	// start index of edges determined by offset list
 	startIndex := offsets[nodeID]
 	endIndex := 0
@@ -458,7 +445,7 @@ func getArcFlagRouteNeighbors(destinations []int, offsets []int, weights []int, 
 		endIndex = offsets[nodeID+1]
 	}
 	for i := startIndex; i < endIndex; i++ {
-		if !visited[destinations[i]] && arcFlags[i][destPartition] {
+		if !visited[destinations[i]] && (arcFlags[i][destPartition] || destPartition == currentNodePartition) {
 			neighborIDList = append(neighborIDList, []int{destinations[i], weights[i]})
 		}
 	}
@@ -596,19 +583,26 @@ func MultiSourceArcFlagPreprocess(graph Graph, sourcePartition int, arcFlags [][
 		}
 	}
 	sort.Sort(byDistance(ascendingDistanceList))
-
+	distance = [][]int{}
+	prioQ = PriorityQueue{}
+	runtime.GC()
 	fmt.Printf("sorting list done, time since start: %.3fs\n", time.Since(preprocessTime).Seconds())
 	// set arc flags
 
+	x := 0
 	for batchID, _ := range sourceBatch {
 
-		x := 0
-
+		fmt.Printf("%d/%d nodes done (%.3fs)\n", x, len(sourceBatch), time.Since(preprocessTime).Seconds())
+		x++
+		y := 0
 		for i := 0; i < len(ascendingDistanceList); i++ {
 			nodeID := ascendingDistanceList[i][0]
 			if prev[nodeID][batchID] >= 0 && !checkedList[nodeID][batchID] {
 				addBatchArcFlags(graph, nodeID, arcFlags, prev, numOfPartitions, nodePartitionMatrix, checkedList, batchID)
-				x++
+				y++
+			}
+			if i%100000 == 0 {
+				fmt.Printf("%d out of %d (%d)\n", i, len(ascendingDistanceList), y)
 			}
 		}
 	}

@@ -11,6 +11,7 @@ import (
 
 // the graph!
 var graph util.Graph
+var arcData util.ArcData
 
 func main() {
 	fmt.Printf("Starting")
@@ -137,6 +138,7 @@ func createGraph(pathToCoastlinesPBF string, numberOfNodes int) {
 func initialize() {
 	// relevant paths
 	graphPath := "../../data/graph.graph"
+	arcFlagPath := "../../data/arc.flags"
 	antarctica := "../../data/antarctica.osm.pbf"
 	global := "../../data/global.sec"
 	// prints "..." so we dont have to comment/uncomment all paths because go is weird like that
@@ -144,13 +146,13 @@ func initialize() {
 
 	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	//createGraph(antarctica, 50000)
+	createGraph(antarctica, 50000)
 	//util.GraphToFile(graph, graphPath)
 	//-----------------------------------------------------
 
 	// IMPORT GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	graph = util.FileToGraph(graphPath)
+	//graph = util.FileToGraph(graphPath)
 	//-----------------------------------------------------
 
 	// PRINT TO GEOJSON BY UNCOMMENTING BELOW:
@@ -158,6 +160,14 @@ func initialize() {
 	//util.PrintPointsToGEOJSON(graph)
 	//util.PrintEdgesToGEOJSON(graph)
 	//-----------------------------------------------------
+
+	//arcFlagStuff
+	// GENERATE NEW ARCFLAGS BY UNCOMMENTING BELOW
+	arcData = util.PreprocessArcFlags(graph, 6, 2)
+	util.ArcFlagsToFile(arcData, arcFlagPath)
+
+	// IMPORT ARCFLAGS BY UNCOMMENTING BELOW:
+	//arcData = util.FileToArcData(arcFlagPath)
 }
 
 func testStuff() {
@@ -166,9 +176,10 @@ func testStuff() {
 	// for _, row := range graph.NodeMatrix {
 	// 	fmt.Printf("first lon: %3.3f - second lon: %3.3f\n", graph.Nodes[row[0]][0], graph.Nodes[row[1]][0])
 	// }
-	arcFlags, npm := util.PreprocessArcFlags(graph, 15, 15)
-
-	util.TestAlgorithms(graph, npm, arcFlags, 10000)
+	// for _, line := range arcFlags {
+	// 	fmt.Printf("%v\n", line)
+	// }
+	util.TestAlgorithms(graph, arcData, 1000)
 	// for _, row := range  util.PreprocessArcFlags(graph, 8, 1){
 	// 	fmt.Printf("[")
 	// 	for _, val := range row {

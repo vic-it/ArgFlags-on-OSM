@@ -349,8 +349,9 @@ func printPreProcessProgress(current int, max int) {
 }
 
 // actually calculates a dijkstra route with arc flags
-func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcFlags [][]bool, nodePartitionMatrix [][]int) (int, []int, float64, float64, int) {
-
+func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData ArcData, nodePartitionList []int) (int, []int, float64, float64, int) {
+	nodePartitionMatrix := arcData.NodePartitionMatrix
+	arcFlags := arcData.ArcFlags
 	//totalTime := time.Now()
 	destPartition := 0
 	initTime := time.Now()
@@ -384,6 +385,7 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcFlags []
 	initTimeDiff := time.Since(initTime).Seconds()
 	//fmt.Printf("Time to initialize search: %.3fs\n", initTimeDiff)
 	searchTime := time.Now()
+	var x int64
 	for {
 		//gets "best" next node
 		node := heap.Pop(&prioQ).(*Item)
@@ -396,8 +398,9 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcFlags []
 
 		// gets all neighbor/connected nodes
 
-		row, col := GetNodeMatrixIndex(node.value, graph)
-		currentNodePartition := nodePartitionMatrix[row][col]
+		aTime := time.Now()
+		currentNodePartition := nodePartitionList[node.value] //
+		x += time.Since(aTime).Microseconds()
 		neighbors := getArcFlagRouteNeighbors(graph.Targets, graph.Offsets, graph.Weights, node.value, arcFlags, destPartition, currentNodePartition)
 		for _, neighbor := range neighbors {
 			alt := distance[node.value] + neighbor[1]
@@ -414,7 +417,7 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcFlags []
 			break
 		}
 	}
-
+	//println(x / 1000)
 	var path []int
 	currentNode := destID
 	path = append(path, currentNode)
@@ -445,7 +448,7 @@ func getArcFlagRouteNeighbors(destinations []int, offsets []int, weights []int, 
 		endIndex = offsets[nodeID+1]
 	}
 	for i := startIndex; i < endIndex; i++ {
-		if !visited[destinations[i]] && (arcFlags[i][destPartition] || destPartition == currentNodePartition) {
+		if (arcFlags[i][destPartition] || destPartition == currentNodePartition) && !visited[destinations[i]] {
 			neighborIDList = append(neighborIDList, []int{destinations[i], weights[i]})
 		}
 	}

@@ -205,7 +205,7 @@ func ArcFlagsToFile(arcData ArcData, path string) {
 	w.WriteString("x\n")
 
 	//WRITE NODE PARTITION MATRIX
-	for _, row := range arcData.nodePartitionMatrix {
+	for _, row := range arcData.NodePartitionMatrix {
 		rowString := ""
 		for i, partitionID := range row {
 			if i < len(row)-1 {
@@ -237,7 +237,7 @@ func ArcFlagsToFile(arcData ArcData, path string) {
 }
 
 // imports a graph from a .graph file
-func FileToArcData(path string) ArcData {
+func FileToArcFlags(path string) ArcData {
 	startTime := time.Now()
 	arcData := ArcData{}
 	f, err := os.Open(path)
@@ -256,7 +256,7 @@ func FileToArcData(path string) ArcData {
 			switch ctr {
 			case 0: //READ NUM OF NODES/EDGES
 				arcData.numberOfPartitions, _ = strconv.Atoi(line)
-				fmt.Printf("Importing ArcFlag Data with: %d partitions...\n", arcData.numberOfPartitions)
+				fmt.Printf("Importing arc flag data with: %d partitions...\n", arcData.numberOfPartitions)
 			case 1: // partitionOfNode1, partitionOfNode2,...
 				list := strings.Split(line, ",")
 				row := []int{}
@@ -264,7 +264,7 @@ func FileToArcData(path string) ArcData {
 					partitionID, _ := strconv.Atoi(stringID)
 					row = append(row, partitionID)
 				}
-				arcData.nodePartitionMatrix = append(arcData.nodePartitionMatrix, row)
+				arcData.NodePartitionMatrix = append(arcData.NodePartitionMatrix, row)
 			case 2: // arcflags
 				list := strings.Split(line, ",")
 				row := []bool{}
@@ -281,7 +281,7 @@ func FileToArcData(path string) ArcData {
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Time to read graph from file: %.3fs\n", time.Since(startTime).Seconds())
+	fmt.Printf("Time to read arc flag data from file: %.3fs\n", time.Since(startTime).Seconds())
 	return arcData
 }
 

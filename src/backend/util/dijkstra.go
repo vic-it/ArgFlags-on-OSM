@@ -77,10 +77,10 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 		path = append(path, prev[currentNode])
 		currentNode = prev[currentNode]
 		//maybe error here??
-		if currentNode < 0 {
-			distance[destID] = -1
-			break
-		}
+		// if currentNode < 0 {
+		// 	distance[destID] = -1
+		// 	break
+		// }
 	}
 	//if distance is "-1" -> no path found,
 	searchTimeDiff := time.Since(searchTime).Seconds()

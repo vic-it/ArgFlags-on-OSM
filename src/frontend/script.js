@@ -5,6 +5,7 @@ var dest = {marker: null, lon: 0, lat: 0, id: -1}
 var path1 = null
 var path2 = null
 var path3 = null
+var paths = []
 
 
 function clickHandler(event){
@@ -33,6 +34,8 @@ function clickHandler(event){
 function routeHandler(){
     srcID = start.id
     destID = dest.id
+    mode = document.querySelector('input[name="alg"]:checked').value;
+    console.log(mode)
     if(start.id <0 || dest.id<0){
         return
     }
@@ -40,6 +43,7 @@ function routeHandler(){
     let url = new URL("http://localhost:8080/getroute");
     url.searchParams.append("src", srcID);
     url.searchParams.append("dest", destID);
+    url.searchParams.append("mode", mode);
 
     fetch(url).then((response) => {
         //extracts the response
@@ -47,23 +51,16 @@ function routeHandler(){
         return answer
     }).then((result) => {
         //takes body of response and splits it into the coordinates lon then lat
-        if(path1 !=null){
-            map.removeLayer(path1)
-        } 
-        if(path2 !=null){
-            map.removeLayer(path2)
-        } 
-        if(path3 !=null){
-            map.removeLayer(path3)
-        } 
+        for(var path of paths){
+            map.removeLayer(path)
+        }
         distCoords = result.split("y")
         if (+distCoords[0] <0 || +distCoords[0]>45000000){
             console.log("NO PATH FOUND!")
-            document.getElementById("distance").value = "NO PATH FOUND"    
-   
+            document.getElementById("distance").value = "NO PATH FOUND"   
         } else{
             distance = +distCoords[0]
-            rawCoordinates = distCoords[1].split("x")
+            rawCoordinates = distCoords[4].split("x")
             var coordinates = [];
             for (i = 0; i < rawCoordinates.length-1; i++){
                 c = rawCoordinates[i].split("z")
@@ -72,12 +69,12 @@ function routeHandler(){
                 coordinates.push([lat, lon])
                 if(lon>90 && +rawCoordinates[i+1].split("z")[0]<-90){
                     coordinates.push([lat, 180])
-                    path2 = L.polyline(coordinates, {color: 'blue'}).addTo(map)
+                    paths.push(L.polyline(coordinates, {color: 'blue'}).addTo(map))
                     coordinates = []
                     coordinates.push([lat, -179.5])
                 } else if(lon<-90 && +rawCoordinates[i+1].split("z")[0]>90){
                     coordinates.push([lat, -179.5])
-                    path3 = L.polyline(coordinates, {color: 'blue'}).addTo(map)
+                    paths.push(L.polyline(coordinates, {color: 'blue'}).addTo(map))
                     coordinates = []
                     coordinates.push([lat, 180])
                     }
@@ -88,11 +85,18 @@ function routeHandler(){
                 lat = +c[1]
                 lon = +c[0]
                 coordinates.push([lat, lon])
-                path1 = L.polyline(coordinates, {color: 'blue'}).addTo(map)
+                paths.push(L.polyline(coordinates, {color: 'blue'}).addTo(map))
             document.getElementById("distance").value = ""+distance+"km"
             
             console.log("Path found with distance: "+distance+"km")
         }
+        nodesPopped = distCoords[1]
+        initTime = +distCoords[2]
+        searchTime = +distCoords[3]
+        //total time in ms, above times in s
+        totalTime = Math. round((initTime+searchTime)*1000)
+        document.getElementById("nodes").value = ""+nodesPopped
+        document.getElementById("time").value = ""+totalTime+"ms"
     })
 }
 

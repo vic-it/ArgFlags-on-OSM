@@ -57,7 +57,7 @@ type Graph struct {
 
 type ArcData struct {
 	ArcFlags            [][]bool
-	nodePartitionMatrix [][]int
+	NodePartitionMatrix [][]int
 	numberOfPartitions  int
 }
 

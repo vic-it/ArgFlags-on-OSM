@@ -12,6 +12,7 @@ import (
 // the graph!
 var graph util.Graph
 var arcData util.ArcData
+var nodePartitionList []int
 
 func main() {
 	fmt.Printf("Starting")
@@ -60,13 +61,14 @@ func getRouteHandler() http.HandlerFunc {
 		urlQuery := request.URL.Query()
 		src, _ := strconv.ParseInt(urlQuery["src"][0], 0, 64)
 		dest, _ := strconv.ParseInt(urlQuery["dest"][0], 0, 64)
+		mode, _ := strconv.ParseInt(urlQuery["mode"][0], 0, 64)
 
 		// fmt.Printf("source node ID: %d\n", src)
 		// fmt.Printf("destination node ID: %d\n", dest)
 
 		writer.WriteHeader(http.StatusOK)
 		//calc route below
-		writer.Write([]byte(getRouteString(src, dest)))
+		writer.Write([]byte(getRouteString(src, dest, mode)))
 	}
 	return routingHandler
 }
@@ -74,9 +76,18 @@ func getRouteHandler() http.HandlerFunc {
 // should return a string in the following format:
 // if no route found -> -1y0
 // if route found -> distanceylon1zlat1xlon2zlat2x...
-func getRouteString(src int64, dest int64) string {
-	distance, path, _, _, _ := util.CalculateDijkstra(graph, int(src), int(dest))
-	output := fmt.Sprintf("%dy", distance)
+func getRouteString(src int64, dest int64, mode int64) string {
+	var distance int
+	var path []int
+	var nodesPopped int
+	var initTime float64
+	var searchTime float64
+	if mode == 0 {
+		distance, path, initTime, searchTime, nodesPopped = util.CalculateDijkstra(graph, int(src), int(dest))
+	} else {
+		distance, path, initTime, searchTime, nodesPopped = util.CalculateArcFlagDijkstra(graph, int(src), int(dest), arcData, nodePartitionList)
+	}
+	output := fmt.Sprintf("%dy%dy%.3fy%.3fy", distance, nodesPopped, initTime, searchTime)
 	for i, nodeID := range path {
 		if i == len(path)-1 {
 			output = fmt.Sprintf("%s%fz%f", output, graph.Nodes[nodeID][0], graph.Nodes[nodeID][1])
@@ -134,6 +145,12 @@ func createGraph(pathToCoastlinesPBF string, numberOfNodes int) {
 	graph = util.GenerateGraph(numberOfNodes, util.GetCoastline(pathToCoastlinesPBF))
 }
 
+func preparePartitionList() {
+	for _, row := range arcData.NodePartitionMatrix {
+		nodePartitionList = append(nodePartitionList, row...)
+	}
+}
+
 // initializes a graph either by importing it from a file or by creating one (creating can take a long time)
 func initialize() {
 	// relevant paths
@@ -146,13 +163,13 @@ func initialize() {
 
 	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	createGraph(antarctica, 50000)
+	//createGraph(antarctica, 50000)
 	//util.GraphToFile(graph, graphPath)
 	//-----------------------------------------------------
 
 	// IMPORT GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	//graph = util.FileToGraph(graphPath)
+	graph = util.FileToGraph(graphPath)
 	//-----------------------------------------------------
 
 	// PRINT TO GEOJSON BY UNCOMMENTING BELOW:
@@ -163,11 +180,13 @@ func initialize() {
 
 	//arcFlagStuff
 	// GENERATE NEW ARCFLAGS BY UNCOMMENTING BELOW
-	arcData = util.PreprocessArcFlags(graph, 6, 2)
-	util.ArcFlagsToFile(arcData, arcFlagPath)
+	//arcData = util.PreprocessArcFlags(graph, 6, 2)
+	//util.ArcFlagsToFile(arcData, arcFlagPath)
 
 	// IMPORT ARCFLAGS BY UNCOMMENTING BELOW:
-	//arcData = util.FileToArcData(arcFlagPath)
+	arcData = util.FileToArcFlags(arcFlagPath)
+	//this speeds up arc flag since it doesnt have to calculate row/col of nodepartitionmatrix anymore
+	preparePartitionList()
 }
 
 func testStuff() {
@@ -179,7 +198,7 @@ func testStuff() {
 	// for _, line := range arcFlags {
 	// 	fmt.Printf("%v\n", line)
 	// }
-	util.TestAlgorithms(graph, arcData, 1000)
+	//util.TestAlgorithms(graph, arcData, 100, nodePartitionList)
 	// for _, row := range  util.PreprocessArcFlags(graph, 8, 1){
 	// 	fmt.Printf("[")
 	// 	for _, val := range row {

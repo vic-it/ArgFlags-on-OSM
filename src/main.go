@@ -198,7 +198,7 @@ func testStuff() {
 	// for _, line := range arcFlags {
 	// 	fmt.Printf("%v\n", line)
 	// }
-	util.TestAlgorithms(graph, arcData, 1000, nodePartitionList)
+	util.TestAlgorithms(graph, arcData, 3000, nodePartitionList)
 	// for _, row := range  util.PreprocessArcFlags(graph, 8, 1){
 	// 	fmt.Printf("[")
 	// 	for _, val := range row {

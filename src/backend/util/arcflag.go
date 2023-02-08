@@ -15,7 +15,7 @@ var processTimer time.Time
 
 func PreprocessArcFlags(graph Graph, numOfRows int, numOfPoleRowPartitions int) ArcData {
 	println("Generating arc flags...")
-	maxThreads := 8
+	maxThreads := 16
 	fmt.Printf("Preprocessing on %d threads...\n", maxThreads)
 	arcFlags := [][]bool{}
 	nodePartitionMatrix, numOfPartitions := CreatePartitions(graph, numOfRows, numOfPoleRowPartitions)
@@ -38,7 +38,7 @@ func PreprocessArcFlags(graph Graph, numOfRows int, numOfPoleRowPartitions int) 
 		ctr++
 		start := maxThreads * (ctr - 1)
 		end := maxThreads * ctr
-		if ctr%120 == 1 {
+		if ctr%125 == 1 {
 			printPreProcessProgress(start, len(boundaryNodeIDs))
 		}
 

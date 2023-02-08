@@ -192,7 +192,7 @@ func FileToGraph(path string) Graph {
 // z (end)
 func ArcFlagsToFile(arcData ArcData, path string) {
 	startTime := time.Now()
-	println("WRITING ArcFlags TO FILE...")
+	println("WRITING arc flags TO FILE...")
 
 	f, err := os.Create(path)
 	check(err)
@@ -233,7 +233,7 @@ func ArcFlagsToFile(arcData ArcData, path string) {
 	w.WriteString("z")
 	w.Flush()
 
-	fmt.Printf("Time to write graph to file: %.3fs\n", time.Since(startTime).Seconds())
+	fmt.Printf("Time to write arc flags to file: %.3fs\n", time.Since(startTime).Seconds())
 }
 
 // imports a graph from a .graph file

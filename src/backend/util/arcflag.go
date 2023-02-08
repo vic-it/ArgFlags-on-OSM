@@ -18,7 +18,7 @@ func PreprocessArcFlags(graph Graph, numOfRows int, numOfPoleRowPartitions int) 
 	maxThreads := 8
 	fmt.Printf("Preprocessing on %d threads...\n", maxThreads)
 	arcFlags := [][]bool{}
-	nodePartitionMatrix, numOfPartitions := createPartitions(graph, numOfRows, numOfPoleRowPartitions)
+	nodePartitionMatrix, numOfPartitions := CreatePartitions(graph, numOfRows, numOfPoleRowPartitions)
 
 	//fill empty arc flags array
 	for i := 0; i < len(graph.Sources); i++ {
@@ -28,7 +28,7 @@ func PreprocessArcFlags(graph Graph, numOfRows int, numOfPoleRowPartitions int) 
 		}
 		arcFlags = append(arcFlags, tmp)
 	}
-	// singleSourceArcFlagPreprocess(graph, 20, arcFlags, numOfPartitions, nodePartitionMatrix, false)
+	// singleSourceArcFlagPreprocess(graph, 22, arcFlags, numOfPartitions, nodePartitionMatrix, false)
 	boundaryNodeIDs := getBoundaryNodeIDS(graph, nodePartitionMatrix)
 	ctr := 0
 	processTimer = time.Now()
@@ -57,7 +57,7 @@ func PreprocessArcFlags(graph Graph, numOfRows int, numOfPoleRowPartitions int) 
 	fmt.Printf("Time to generate arc flags: %.3fs\n", time.Since(totalTime).Seconds())
 	return ArcData{arcFlags, nodePartitionMatrix, numOfPartitions}
 }
-func createPartitions(graph Graph, numOfRows int, numOfPoleRowPartitions int) ([][]int, int) {
+func CreatePartitions(graph Graph, numOfRows int, numOfPoleRowPartitions int) ([][]int, int) {
 	// nodeCount := len(graph.Nodes)
 	rowCount := len(graph.NodeMatrix)
 	graphRowsPerPartitionRow := int(math.Ceil(float64(len(graph.NodeMatrix)) / float64(numOfRows)))
@@ -164,12 +164,15 @@ func getBoundaryNodeIDS(graph Graph, nodePartitionMatrix [][]int) []int {
 		for colID, nodeID := range row {
 			currentNodePartition := nodePartitionMatrix[rowID][colID]
 			neighList := GetGraphNeighbors(graph.Targets, graph.Offsets, graph.Weights, nodeID)
+			shouldAdd := false
 			for _, idAndDistance := range neighList {
 				row, col := GetNodeMatrixIndex(idAndDistance[0], graph)
 				if nodePartitionMatrix[row][col] != currentNodePartition {
-					boundaryNodeIDS = append(boundaryNodeIDS, nodeID)
-
+					shouldAdd = true
 				}
+			}
+			if shouldAdd {
+				boundaryNodeIDS = append(boundaryNodeIDS, nodeID)
 			}
 		}
 	}
@@ -202,28 +205,25 @@ func getBoundaryNodesOfPartition(graph Graph, nodePartitionMatrix [][]int, parti
 // used to preprocess distances to set the arc flag
 func singleSourceArcFlagPreprocess(graph Graph, sourceID int, arcFlags [][]bool, numOfPartitions int, nodePartitionMatrix [][]int, test bool) {
 	hasBeenPopped := make([]bool, len(graph.Nodes))
-	//totalTime := time.Now()
 	var distance []int
-	//here prev means previous edgeID
-	var prev []int
+	//here prevEdges means previous edgeID
+	var prevEdges []int
 	// for each node, we save all partitions that were "touched" >before< opening this node -> these are the flags of the backwards edge, as soon as target node of edge (id of the prev node) is opened
 	var partitionsVisited [][]bool
-	//sorts all popped nodes by their distance to source node, starting at the source, going to the furthest (actually reachable) node
-	//var ascendingPoppedList []int
-	//list of true/false for nodeID - true if node was in sub-tree of previously checked path -> path for this node also checked
-	//var checked []bool
 	nodesPoppedCounter := 0
 	//priority queue datastructure (see priority_queue.go)
 	var prioQ = make(PriorityQueue, 1)
 
 	for i := 0; i < len(graph.Nodes); i++ {
-		prev = append(prev, -1)
+		prevEdges = append(prevEdges, -1)
 		distance = append(distance, 50000000)
-		//checked = append(checked, false)
 		partitionsVisited = append(partitionsVisited, make([]bool, numOfPartitions))
 	}
 
-	//fmt.Printf("Time to complete preprocessing: %.3fs\n", time.Since(totalTime).Seconds())
+	row, col := GetNodeMatrixIndex(sourceID, graph)
+	sourceNodesPartition := nodePartitionMatrix[row][col]
+	partitionsVisited[sourceID][sourceNodesPartition] = true
+
 	distance[sourceID] = 0
 	prioQ[0] = &Item{value: sourceID, priority: distance[sourceID], index: 0}
 	heap.Init(&prioQ)
@@ -241,24 +241,22 @@ func singleSourceArcFlagPreprocess(graph Graph, sourceID int, arcFlags [][]bool,
 			break
 		}
 		hasBeenPopped[thisNodeID] = true
-		if prev[thisNodeID] >= 0 {
-			// if prev edge is not -1
+		if prevEdges[thisNodeID] >= 0 {
 			row, col := GetNodeMatrixIndex(thisNodeID, graph)
 			thisNodesPartition := nodePartitionMatrix[row][col]
+			// if prev edge is not -1
 			// node popped -> prev is final -> save visited notes of prev + current one
 			//add all previously visited flags to this node
-			prevNodeID := graph.Sources[prev[thisNodeID]]
+			prevNodeID := graph.Sources[prevEdges[thisNodeID]]
 			// -> add (stored) arcflags for reverseEdgeOf(prev)
-			reverseEdgeID := getReverseEdgeID(graph, prev[thisNodeID])
-			//println(len(partitionsVisited[thisNodeID]))
-			//println(numOfPartitions)
-			for i, flag := range partitionsVisited[prevNodeID] {
-				arcFlags[reverseEdgeID][i] = flag || arcFlags[reverseEdgeID][i]
-
+			reverseEdgeID := getReverseEdgeID(graph, prevEdges[thisNodeID])
+			copy(partitionsVisited[thisNodeID], partitionsVisited[prevNodeID])
+			//partitionsVisited[thisNodeID] = partitionsVisited[prevNodeID]
+			for pID, f := range partitionsVisited[thisNodeID] {
+				arcFlags[reverseEdgeID][pID] = (f || arcFlags[reverseEdgeID][pID])
 			}
-			partitionsVisited[thisNodeID] = partitionsVisited[prevNodeID]
+			//below version has far less false "true"s but is also very inefficient and for some reason not exactly correct
 			partitionsVisited[thisNodeID][thisNodesPartition] = true
-
 		}
 
 		//
@@ -267,13 +265,13 @@ func singleSourceArcFlagPreprocess(graph Graph, sourceID int, arcFlags [][]bool,
 		// if we are at the destination then we break!
 
 		// gets all neighbor/connected nodes
-		neighbors := getArcFlagPreProcessNeighbors(graph.Targets, graph.Offsets, graph.Weights, node.value)
+		neighbors := getArcFlagPreProcessNeighbors(graph.Targets, graph.Offsets, graph.Weights, node.value, hasBeenPopped)
 		for _, neighbor := range neighbors {
 			alt := distance[node.value] + neighbor[1]
 			// neighbor [0] is target node ID, neighbor[2] is ID of edge which goes to this node
 			if alt < distance[neighbor[0]] {
 				distance[neighbor[0]] = alt
-				prev[neighbor[0]] = neighbor[2]
+				prevEdges[neighbor[0]] = neighbor[2]
 				//just re-queue items with better value instead of updating it
 				heap.Push(&prioQ, &Item{value: neighbor[0], priority: alt, index: neighbor[0]})
 			}
@@ -281,18 +279,6 @@ func singleSourceArcFlagPreprocess(graph Graph, sourceID int, arcFlags [][]bool,
 
 	}
 
-	//fmt.Printf("Time to complete preprocessing + dijkstra: %.3fs\n", time.Since(totalTime).Seconds())
-	//x := 0
-	// for i := len(ascendingPoppedList) - 1; i >= 0; i-- {
-	// 	nodeID := ascendingPoppedList[i]
-	// 	if prev[nodeID] >= 0 && !checked[nodeID] {
-	// 		addArcFlags(graph, nodeID, arcFlags, prev, numOfPartitions, nodePartitionMatrix, checked)
-	// 		x++
-	// 	}
-	// }
-
-	//fmt.Printf("Time to complete one node: %.3fs\n", time.Since(totalTime).Seconds())
-	// fmt.Printf("nodes backwards iterated through: %d\n", x)
 	if test {
 		defer wg.Done()
 	}
@@ -325,7 +311,7 @@ func addArcFlags(graph Graph, nodeID int, arcFlags [][]bool, prev []int, numOfPa
 }
 
 // returns the neighbors of a node by their [nodeID, distance, edgeID which leads to new node]
-func getArcFlagPreProcessNeighbors(destinations []int, offsets []int, weights []int, nodeID int) [][]int {
+func getArcFlagPreProcessNeighbors(destinations []int, offsets []int, weights []int, nodeID int, hasBeenPopped []bool) [][]int {
 	// start index of edges determined by offset list
 	startIndex := offsets[nodeID]
 	endIndex := 0
@@ -336,7 +322,9 @@ func getArcFlagPreProcessNeighbors(destinations []int, offsets []int, weights []
 		endIndex = offsets[nodeID+1]
 	}
 	for i := startIndex; i < endIndex; i++ {
-		neighborIDList = append(neighborIDList, []int{destinations[i], weights[i], i})
+		if !hasBeenPopped[destinations[i]] {
+			neighborIDList = append(neighborIDList, []int{destinations[i], weights[i], i})
+		}
 	}
 	return neighborIDList
 }
@@ -364,9 +352,9 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 		for columnID, isInWater := range row {
 			nodeID := graph.NodeMatrix[rowID][columnID]
 			if isInWater {
-				visited[nodeID] = false
-				distance[nodeID] = 50000000
-				prev[nodeID] = -1
+				dijkstraVisited[nodeID] = false
+				dijkstraDistance[nodeID] = 50000000
+				dijkstraPrev[nodeID] = -1
 				//prioQ[i] = &Item{value: nodeID, priority: dist[nodeID], index: i}
 			}
 			if nodeID == destID {
@@ -379,41 +367,38 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 	// 	prev[nodeID] = -1
 	// }
 
-	distance[sourceID] = 0
-	prioQ[0] = &Item{value: sourceID, priority: distance[sourceID], index: 0}
+	dijkstraDistance[sourceID] = 0
+	prioQ[0] = &Item{value: sourceID, priority: dijkstraDistance[sourceID], index: 0}
 	heap.Init(&prioQ)
 	initTimeDiff := time.Since(initTime).Seconds()
 	//fmt.Printf("Time to initialize search: %.3fs\n", initTimeDiff)
 	searchTime := time.Now()
-	var x int64
 	for {
 		//gets "best" next node
 		node := heap.Pop(&prioQ).(*Item)
 		if node.value == destID {
 			break
 		}
-		visited[node.value] = true
+		dijkstraVisited[node.value] = true
 		nodesPoppedCounter++
 		// if we are at the destination then we break!
 
 		// gets all neighbor/connected nodes
 
-		aTime := time.Now()
 		currentNodePartition := nodePartitionList[node.value] //
-		x += time.Since(aTime).Microseconds()
 		neighbors := getArcFlagRouteNeighbors(graph.Targets, graph.Offsets, graph.Weights, node.value, arcFlags, destPartition, currentNodePartition)
 		for _, neighbor := range neighbors {
-			alt := distance[node.value] + neighbor[1]
+			alt := dijkstraDistance[node.value] + neighbor[1]
 			// neighbor [0] is target node ID
-			if alt < distance[neighbor[0]] {
-				distance[neighbor[0]] = alt
-				prev[neighbor[0]] = node.value
+			if alt < dijkstraDistance[neighbor[0]] {
+				dijkstraDistance[neighbor[0]] = alt
+				dijkstraPrev[neighbor[0]] = node.value
 				//just re-queue items with better value instead of updating it
 				heap.Push(&prioQ, &Item{value: neighbor[0], priority: alt, index: neighbor[0]})
 			}
 		}
-		if prioQ.Len() < 1 || distance[node.value] >= 50000000 {
-			distance[destID] = -1
+		if prioQ.Len() < 1 || dijkstraDistance[node.value] >= 50000000 {
+			dijkstraDistance[destID] = -1
 			break
 		}
 	}
@@ -422,9 +407,9 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 	currentNode := destID
 	path = append(path, currentNode)
 	// starts from the destination node and iterates backwards to source node, creating the path
-	for prev[currentNode] >= 0 {
-		path = append(path, prev[currentNode])
-		currentNode = prev[currentNode]
+	for dijkstraPrev[currentNode] >= 0 {
+		path = append(path, dijkstraPrev[currentNode])
+		currentNode = dijkstraPrev[currentNode]
 	}
 	//if distance is "-1" -> no path found,
 	searchTimeDiff := time.Since(searchTime).Seconds()
@@ -433,7 +418,7 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 	// fmt.Printf("distance: %dm\n", dist[destID])
 	// fmt.Printf("nodes in path: %d\n", len(path))
 	// fmt.Printf("Nodes popped: %d\n--\n", nodesPoppedCounter)
-	return distance[destID], path, initTimeDiff, searchTimeDiff, nodesPoppedCounter
+	return dijkstraDistance[destID], path, initTimeDiff, searchTimeDiff, nodesPoppedCounter
 }
 
 // returns the neighbors by their [nodeID, distance]
@@ -448,7 +433,7 @@ func getArcFlagRouteNeighbors(destinations []int, offsets []int, weights []int, 
 		endIndex = offsets[nodeID+1]
 	}
 	for i := startIndex; i < endIndex; i++ {
-		if (arcFlags[i][destPartition] || destPartition == currentNodePartition) && !visited[destinations[i]] {
+		if (arcFlags[i][destPartition] || destPartition == currentNodePartition) && !dijkstraVisited[destinations[i]] {
 			neighborIDList = append(neighborIDList, []int{destinations[i], weights[i]})
 		}
 	}
@@ -540,7 +525,7 @@ func MultiSourceArcFlagPreprocess(graph Graph, sourcePartition int, arcFlags [][
 		// if we are at the destination then we break!
 
 		// gets all neighbor/connected nodes
-		neighbors := getArcFlagPreProcessNeighbors(graph.Targets, graph.Offsets, graph.Weights, node.value)
+		neighbors := getArcFlagPreProcessNeighbors(graph.Targets, graph.Offsets, graph.Weights, node.value, []bool{})
 		for _, neighbor := range neighbors {
 			valChangedCounter := 0
 			minDist := 50000000

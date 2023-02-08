@@ -159,11 +159,11 @@ func initialize() {
 	antarctica := "../../data/antarctica.osm.pbf"
 	global := "../../data/global.sec"
 	// prints "..." so we dont have to comment/uncomment all paths because go is weird like that
-	fmt.Printf("%s%s%s\n", antarctica[0:1], global[0:1], graphPath[0:1])
+	fmt.Printf("%s%s%s%s\n", antarctica[0:1], global[0:1], graphPath[0:1], arcFlagPath[0:1])
 
 	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	//createGraph(antarctica, 50000)
+	//createGraph(antarctica, 100000)
 	//util.GraphToFile(graph, graphPath)
 	//-----------------------------------------------------
 
@@ -180,25 +180,25 @@ func initialize() {
 
 	//arcFlagStuff
 	// GENERATE NEW ARCFLAGS BY UNCOMMENTING BELOW
-	//arcData = util.PreprocessArcFlags(graph, 6, 2)
-	//util.ArcFlagsToFile(arcData, arcFlagPath)
+	// 7 - 3 generates roughly square partitions (64 of them)
+	arcData = util.PreprocessArcFlags(graph, 7, 3)
+	util.ArcFlagsToFile(arcData, arcFlagPath)
 
 	// IMPORT ARCFLAGS BY UNCOMMENTING BELOW:
-	arcData = util.FileToArcFlags(arcFlagPath)
+	//arcData = util.FileToArcFlags(arcFlagPath)
 	//this speeds up arc flag since it doesnt have to calculate row/col of nodepartitionmatrix anymore
 	preparePartitionList()
 }
 
 func testStuff() {
-	// util.PrintPointsToGEOJSON2(graph,
-	// 	util.CreatePartitions(graph, 20, 10))
+	//util.PrintPointsToGEOJSON2(graph, arcData.NodePartitionMatrix)
 	// for _, row := range graph.NodeMatrix {
 	// 	fmt.Printf("first lon: %3.3f - second lon: %3.3f\n", graph.Nodes[row[0]][0], graph.Nodes[row[1]][0])
 	// }
 	// for _, line := range arcFlags {
 	// 	fmt.Printf("%v\n", line)
 	// }
-	//util.TestAlgorithms(graph, arcData, 100, nodePartitionList)
+	util.TestAlgorithms(graph, arcData, 1000, nodePartitionList)
 	// for _, row := range  util.PreprocessArcFlags(graph, 8, 1){
 	// 	fmt.Printf("[")
 	// 	for _, val := range row {

@@ -5,9 +5,9 @@ import (
 	"time"
 )
 
-var visited [1000000]bool
-var distance [1000000]int
-var prev [1000000]int
+var dijkstraVisited [1000000]bool
+var dijkstraDistance [1000000]int
+var dijkstraPrev [1000000]int
 
 // calculates the shortest path between two nodes (on a graph) via dijkstras algorithm
 func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float64, float64, int) {
@@ -23,9 +23,9 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 		for columnID, isInWater := range row {
 			nodeID := graph.NodeMatrix[rowID][columnID]
 			if isInWater {
-				visited[nodeID] = false
-				distance[nodeID] = 50000000
-				prev[nodeID] = -1
+				dijkstraVisited[nodeID] = false
+				dijkstraDistance[nodeID] = 50000000
+				dijkstraPrev[nodeID] = -1
 				//prioQ[i] = &Item{value: nodeID, priority: dist[nodeID], index: i}
 			}
 		}
@@ -35,8 +35,8 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 	// 	prev[nodeID] = -1
 	// }
 
-	distance[sourceID] = 0
-	prioQ[0] = &Item{value: sourceID, priority: distance[sourceID], index: 0}
+	dijkstraDistance[sourceID] = 0
+	prioQ[0] = &Item{value: sourceID, priority: dijkstraDistance[sourceID], index: 0}
 	heap.Init(&prioQ)
 	initTimeDiff := time.Since(initTime).Seconds()
 	//fmt.Printf("Time to initialize search: %.3fs\n", initTimeDiff)
@@ -47,24 +47,24 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 		if node.value == destID {
 			break
 		}
-		visited[node.value] = true
+		dijkstraVisited[node.value] = true
 		nodesPoppedCounter++
 		// if we are at the destination then we break!
 
 		// gets all neighbor/connected nodes
 		neighbors := GetGraphNeighbors(graph.Targets, graph.Offsets, graph.Weights, node.value)
 		for _, neighbor := range neighbors {
-			alt := distance[node.value] + neighbor[1]
+			alt := dijkstraDistance[node.value] + neighbor[1]
 			// neighbor [0] is target node ID
-			if alt < distance[neighbor[0]] {
-				distance[neighbor[0]] = alt
-				prev[neighbor[0]] = node.value
+			if alt < dijkstraDistance[neighbor[0]] {
+				dijkstraDistance[neighbor[0]] = alt
+				dijkstraPrev[neighbor[0]] = node.value
 				//just re-queue items with better value instead of updating it
 				heap.Push(&prioQ, &Item{value: neighbor[0], priority: alt, index: neighbor[0]})
 			}
 		}
-		if prioQ.Len() < 1 || distance[node.value] >= 50000000 {
-			distance[destID] = -1
+		if prioQ.Len() < 1 || dijkstraDistance[node.value] >= 50000000 {
+			dijkstraDistance[destID] = -1
 			break
 		}
 	}
@@ -73,9 +73,9 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 	currentNode := destID
 	path = append(path, currentNode)
 	// starts from the destination node and iterates backwards to source node, creating the path
-	for prev[currentNode] >= 0 {
-		path = append(path, prev[currentNode])
-		currentNode = prev[currentNode]
+	for dijkstraPrev[currentNode] >= 0 {
+		path = append(path, dijkstraPrev[currentNode])
+		currentNode = dijkstraPrev[currentNode]
 		//maybe error here??
 		// if currentNode < 0 {
 		// 	distance[destID] = -1
@@ -89,7 +89,7 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 	// fmt.Printf("distance: %dm\n", dist[destID])
 	// fmt.Printf("nodes in path: %d\n", len(path))
 	// fmt.Printf("Nodes popped: %d\n--\n", nodesPoppedCounter)
-	return distance[destID], path, initTimeDiff, searchTimeDiff, nodesPoppedCounter
+	return dijkstraDistance[destID], path, initTimeDiff, searchTimeDiff, nodesPoppedCounter
 }
 
 // returns all neighbro node IDs connected to the input node
@@ -104,7 +104,7 @@ func GetGraphNeighbors(destinations []int, offsets []int, weights []int, nodeID 
 		endIndex = offsets[nodeID+1]
 	}
 	for i := startIndex; i < endIndex; i++ {
-		if !visited[destinations[i]] {
+		if !dijkstraVisited[destinations[i]] {
 			neighborIDList = append(neighborIDList, []int{destinations[i], weights[i]})
 		}
 	}

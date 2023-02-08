@@ -309,7 +309,7 @@ func PrintPointsToGEOJSON2(graph Graph, nodePartitionMatrix [][]int) {
 	points := [][]float64{}
 	for rowID, row := range nodePartitionMatrix {
 		for colID, partID := range row {
-			if partID%150 == 12 {
+			if partID%5 == 0 {
 				points = append(points, graph.Nodes[graph.NodeMatrix[rowID][colID]])
 			}
 		}

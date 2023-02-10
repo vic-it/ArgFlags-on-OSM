@@ -181,11 +181,11 @@ func initialize() {
 	//arcFlagStuff
 	// GENERATE NEW ARCFLAGS BY UNCOMMENTING BELOW
 	// 7 - 3 generates roughly square partitions (64 of them)
-	arcData = util.PreprocessArcFlags(graph, 7, 3)
-	util.ArcFlagsToFile(arcData, arcFlagPath)
+	//arcData = util.PreprocessArcFlags(graph, 7, 3)
+	//util.ArcFlagsToFile(arcData, arcFlagPath)
 
 	// IMPORT ARCFLAGS BY UNCOMMENTING BELOW:
-	//arcData = util.FileToArcFlags(arcFlagPath)
+	arcData = util.FileToArcFlags(arcFlagPath)
 	//this speeds up arc flag since it doesnt have to calculate row/col of nodepartitionmatrix anymore
 	preparePartitionList()
 }

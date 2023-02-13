@@ -1,21 +1,18 @@
-package util
+package backend
 
 import (
 	"container/heap"
 	"time"
 )
 
-var dijkstraVisited [1000000]bool
-var dijkstraDistance [1000000]int
-var dijkstraPrev [1000000]int
-
-// calculates the shortest path between two nodes (on a graph) via dijkstras algorithm
-func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float64, float64, int) {
-
+func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData ArcData, nodePartitionList []int) (int, []int, float64, float64, int) {
+	nodePartitionMatrix := arcData.NodePartitionMatrix
+	arcFlags := arcData.ArcFlags
 	//totalTime := time.Now()
-
+	destPartition := 0
 	initTime := time.Now()
 	nodesPoppedCounter := 0
+
 	//priority queue datastructure (see priority_queue.go)
 	var prioQ = make(PriorityQueue, 1)
 
@@ -27,6 +24,9 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 				dijkstraDistance[nodeID] = 50000000
 				dijkstraPrev[nodeID] = -1
 				//prioQ[i] = &Item{value: nodeID, priority: dist[nodeID], index: i}
+			}
+			if nodeID == destID {
+				destPartition = nodePartitionMatrix[rowID][columnID]
 			}
 		}
 	}
@@ -52,7 +52,9 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 		// if we are at the destination then we break!
 
 		// gets all neighbor/connected nodes
-		neighbors := GetGraphNeighbors(graph.Targets, graph.Offsets, graph.Weights, node.value)
+
+		currentNodePartition := nodePartitionList[node.value] //
+		neighbors := getArcFlagRouteNeighbors(graph.Targets, graph.Offsets, graph.Weights, node.value, arcFlags, destPartition, currentNodePartition)
 		for _, neighbor := range neighbors {
 			alt := dijkstraDistance[node.value] + neighbor[1]
 			// neighbor [0] is target node ID
@@ -68,7 +70,7 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 			break
 		}
 	}
-
+	//println(x / 1000)
 	var path []int
 	currentNode := destID
 	path = append(path, currentNode)
@@ -76,11 +78,6 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 	for dijkstraPrev[currentNode] >= 0 {
 		path = append(path, dijkstraPrev[currentNode])
 		currentNode = dijkstraPrev[currentNode]
-		//maybe error here??
-		// if currentNode < 0 {
-		// 	distance[destID] = -1
-		// 	break
-		// }
 	}
 	//if distance is "-1" -> no path found,
 	searchTimeDiff := time.Since(searchTime).Seconds()
@@ -92,8 +89,8 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 	return dijkstraDistance[destID], path, initTimeDiff, searchTimeDiff, nodesPoppedCounter
 }
 
-// returns all neighbro node IDs connected to the input node
-func GetGraphNeighbors(destinations []int, offsets []int, weights []int, nodeID int) [][]int {
+// returns the neighbors by their [nodeID, distance]
+func getArcFlagRouteNeighbors(destinations []int, offsets []int, weights []int, nodeID int, arcFlags [][]bool, destPartition int, currentNodePartition int) [][]int {
 	// start index of edges determined by offset list
 	startIndex := offsets[nodeID]
 	endIndex := 0
@@ -104,7 +101,7 @@ func GetGraphNeighbors(destinations []int, offsets []int, weights []int, nodeID 
 		endIndex = offsets[nodeID+1]
 	}
 	for i := startIndex; i < endIndex; i++ {
-		if !dijkstraVisited[destinations[i]] {
+		if (arcFlags[i][destPartition] || destPartition == currentNodePartition) && !dijkstraVisited[destinations[i]] {
 			neighborIDList = append(neighborIDList, []int{destinations[i], weights[i]})
 		}
 	}

@@ -6,12 +6,12 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/vic-it/OSM-FMI/src/backend/util"
+	"github.com/vic-it/OSM-FMI/src/backend"
 )
 
 // the graph!
-var graph util.Graph
-var arcData util.ArcData
+var graph backend.Graph
+var arcData backend.ArcData
 var nodePartitionList []int
 
 func main() {
@@ -45,7 +45,7 @@ func getPointHandler() http.HandlerFunc {
 
 		// fmt.Printf("click lon: %f\n", inputLon)
 		// fmt.Printf("click lat: %f\n", inputLat)
-		nodeID := util.GetClosestGridNode(inputLon, inputLat, graph)
+		nodeID := backend.GetClosestGridNode(inputLon, inputLat, graph)
 
 		outputString := fmt.Sprintf("%fx%fx%d", graph.Nodes[nodeID][0], graph.Nodes[nodeID][1], nodeID)
 		writer.WriteHeader(http.StatusOK)
@@ -83,9 +83,9 @@ func getRouteString(src int64, dest int64, mode int64) string {
 	var initTime float64
 	var searchTime float64
 	if mode == 0 {
-		distance, path, initTime, searchTime, nodesPopped = util.CalculateDijkstra(graph, int(src), int(dest))
+		distance, path, initTime, searchTime, nodesPopped = backend.CalculateDijkstra(graph, int(src), int(dest))
 	} else {
-		distance, path, initTime, searchTime, nodesPopped = util.CalculateArcFlagDijkstra(graph, int(src), int(dest), arcData, nodePartitionList)
+		distance, path, initTime, searchTime, nodesPopped = backend.CalculateArcFlagDijkstra(graph, int(src), int(dest), arcData, nodePartitionList)
 	}
 	output := fmt.Sprintf("%dy%dy%.3fy%.3fy", distance, nodesPopped, initTime, searchTime)
 	for i, nodeID := range path {
@@ -140,9 +140,9 @@ func analyzeDirectory(basePath string) {
 
 // creates a graph with the coastlines from the path and roughly the number of nodes
 func createGraph(pathToCoastlinesPBF string, numberOfNodes int) {
-	graph = util.Graph{}
+	graph = backend.Graph{}
 	runtime.GC()
-	graph = util.GenerateGraph(numberOfNodes, util.GetCoastline(pathToCoastlinesPBF))
+	graph = backend.GenerateGraph(numberOfNodes, backend.GetCoastline(pathToCoastlinesPBF))
 }
 
 func preparePartitionList() {
@@ -164,42 +164,42 @@ func initialize() {
 	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
 	//createGraph(antarctica, 100000)
-	//util.GraphToFile(graph, graphPath)
+	//backend.GraphToFile(graph, graphPath)
 	//-----------------------------------------------------
 
 	// IMPORT GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	graph = util.FileToGraph(graphPath)
+	graph = backend.FileToGraph(graphPath)
 	//-----------------------------------------------------
 
 	// PRINT TO GEOJSON BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	//util.PrintPointsToGEOJSON(graph)
-	//util.PrintEdgesToGEOJSON(graph)
+	//backend.PrintPointsToGEOJSON(graph)
+	//backend.PrintEdgesToGEOJSON(graph)
 	//-----------------------------------------------------
 
 	//arcFlagStuff
 	// GENERATE NEW ARCFLAGS BY UNCOMMENTING BELOW
 	// 7 - 3 generates roughly square partitions (64 of them)
-	//arcData = util.PreprocessArcFlags(graph, 7, 3)
-	//util.ArcFlagsToFile(arcData, arcFlagPath)
+	//arcData = backend.PreprocessArcFlags(graph, 7, 3)
+	//backend.ArcFlagsToFile(arcData, arcFlagPath)
 
 	// IMPORT ARCFLAGS BY UNCOMMENTING BELOW:
-	arcData = util.FileToArcFlags(arcFlagPath)
+	arcData = backend.FileToArcFlags(arcFlagPath)
 	//this speeds up arc flag since it doesnt have to calculate row/col of nodepartitionmatrix anymore
 	preparePartitionList()
 }
 
 func testStuff() {
-	//util.PrintPointsToGEOJSON2(graph, arcData.NodePartitionMatrix)
+	//backend.PrintPointsToGEOJSON2(graph, arcData.NodePartitionMatrix)
 	// for _, row := range graph.NodeMatrix {
 	// 	fmt.Printf("first lon: %3.3f - second lon: %3.3f\n", graph.Nodes[row[0]][0], graph.Nodes[row[1]][0])
 	// }
 	// for _, line := range arcFlags {
 	// 	fmt.Printf("%v\n", line)
 	// }
-	util.TestAlgorithms(graph, arcData, 3000, nodePartitionList)
-	// for _, row := range  util.PreprocessArcFlags(graph, 8, 1){
+	backend.TestAlgorithms(graph, arcData, 100, nodePartitionList)
+	// for _, row := range  backend.PreprocessArcFlags(graph, 8, 1){
 	// 	fmt.Printf("[")
 	// 	for _, val := range row {
 	// 		fmt.Printf("%t, ", val)

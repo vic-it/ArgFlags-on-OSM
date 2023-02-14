@@ -100,10 +100,13 @@ func getRouteHandler() http.HandlerFunc {
 
 		// fmt.Printf("source node ID: %d\n", src)
 		// fmt.Printf("destination node ID: %d\n", dest)
-
 		writer.WriteHeader(http.StatusOK)
-		//calc route below
-		writer.Write([]byte(getRouteString(src, dest, mode)))
+		if runningActiveTests {
+			writer.Write([]byte("-2"))
+		} else {
+			//calc route below
+			writer.Write([]byte(getRouteString(src, dest, mode)))
+		}
 	}
 	return routingHandler
 }

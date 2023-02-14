@@ -75,10 +75,16 @@ function testsHandler(){
             //i hate javascript
             if(dProgress== 100.0){
                 setTimeout(()=>{
-                    document.getElementById("dijkstraResult").innerHTML = answer[2]},600)            }            
+                    document.getElementById("dijkstraResult").innerHTML = answer[2];
+                    document.getElementById("dijkstraBar").style.width = '100%';
+                    document.getElementById("dijkstraBar").innerHTML = 'completed';
+                },600)            }            
             if(aProgress== 100.0){                                
                 setTimeout(()=>{
-                    document.getElementById("arcflagResult").innerHTML = answer[3]},600)
+                    document.getElementById("arcflagResult").innerHTML = answer[3]
+                    document.getElementById("arcflagBar").style.width = '100%';
+                    document.getElementById("arcflagBar").innerHTML = 'completed';
+                },600)
             }
             if(dProgress == 100.0 && aProgress == 100.0){
                 document.querySelector('#testButton').disabled = false;
@@ -107,10 +113,10 @@ function updateBars(dProg, aProg){
             dBar.innerHTML = dWidth.toFixed(1) + '%';
             dWidth += dStepSize;
         }
-        // if(dProg == 100){            
-        //     dBar.style.width = '100%';
-        //     dBar.innerHTML = '100%';
-        // }
+        if(dProg == 100){            
+            dBar.style.width = '100%';
+            dBar.innerHTML = 'completed';
+        }
     }
     var aIntervall = setInterval(aFrame, 20);
     function aFrame() {
@@ -121,10 +127,10 @@ function updateBars(dProg, aProg){
             aBar.innerHTML = aWidth.toFixed(1)  + '%';
             aWidth += aStepSize;
         }
-        // if(aProg == 100){            
-        //     aBar.style.width = '100%';
-        //     aBar.innerHTML = '100%';
-        // }
+        if(aWidth +2*aStepSize>= 100){            
+            aBar.style.width = '100%';
+            aBar.innerHTML = 'completed';
+        }
     }
       
 }
@@ -152,7 +158,10 @@ function routeHandler(){
             map.removeLayer(path)
         }
         distCoords = result.split("y")
-        if (+distCoords[0] <0 || +distCoords[0]>45000000){
+        if (+distCoords[0] < -1){
+            document.getElementById("distance").value = "TESTS STILL RUNNING"
+            return
+        }else if (+distCoords[0] == -1 || +distCoords[0]>45000000){
             document.getElementById("distance").value = "NO PATH FOUND"   
         } else{
             distance = +distCoords[0]

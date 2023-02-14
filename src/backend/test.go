@@ -83,7 +83,7 @@ func testDijkstra(graph Graph, n int, paths [][]int) {
 	}
 	//TEST: 1000 runs with average initialization time of: xxx and average search time of: xxx and longest total search of: xxx
 	//print results
-	stats := fmt.Sprintf("Total test time for %d routes: %.3fs (avg: %.3fs)\n", n, time.Since(totalTime).Seconds(), time.Since(totalTime).Seconds()/float64(n))
+	stats := fmt.Sprintf("Total test time for %d routes: %.1fs (avg: %.3fs)\n", n, time.Since(totalTime).Seconds(), time.Since(totalTime).Seconds()/float64(n))
 	stats += fmt.Sprintf("Average initialization time: %.3fs (max: %.3fs)\n", totalInitTime/float64(n), maxInitTime)
 	stats += fmt.Sprintf("Average search time: %.3fs (max: %.3fs)\n", totalSearchTime/float64(n), maxSearchTime)
 	stats += fmt.Sprintf("Average heap pops: %d pops (max: %d pops)\n", totalNodesPopped/n, maxNodesPopped)
@@ -149,7 +149,7 @@ func testArcFlagDijkstra(graph Graph, n int, paths [][]int, arcData ArcData, nod
 	}
 	//TEST: 1000 runs with average initialization time of: xxx and average search time of: xxx and longest total search of: xxx
 	//print results
-	stats := fmt.Sprintf("Total test time for %d routes: %.3fs (avg: %.3fs)\n", n, time.Since(totalTime).Seconds(), time.Since(totalTime).Seconds()/float64(n))
+	stats := fmt.Sprintf("Total test time for %d routes: %.1fs (avg: %.3fs)\n", n, time.Since(totalTime).Seconds(), time.Since(totalTime).Seconds()/float64(n))
 	stats += fmt.Sprintf("Average initialization time: %.3fs (max: %.3fs)\n", totalInitTime/float64(n), maxInitTime)
 	stats += fmt.Sprintf("Average search time: %.3fs (max: %.3fs)\n", totalSearchTime/float64(n), maxSearchTime)
 	stats += fmt.Sprintf("Average heap pops: %d pops (max: %d pops)\n", totalNodesPopped/n, maxNodesPopped)

@@ -12,8 +12,6 @@ var dijkstraPrev [1000000]int
 // calculates the shortest path between two nodes (on a graph) via dijkstras algorithm
 func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float64, float64, int) {
 
-	//totalTime := time.Now()
-
 	initTime := time.Now()
 	nodesPoppedCounter := 0
 	//priority queue datastructure (see priority_queue.go)
@@ -26,20 +24,14 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 				dijkstraVisited[nodeID] = false
 				dijkstraDistance[nodeID] = 50000000
 				dijkstraPrev[nodeID] = -1
-				//prioQ[i] = &Item{value: nodeID, priority: dist[nodeID], index: i}
 			}
 		}
 	}
-	// for nodeID, _ := range graph.Nodes {
-	// 	dist[nodeID] = 50000000
-	// 	prev[nodeID] = -1
-	// }
 
 	dijkstraDistance[sourceID] = 0
 	prioQ[0] = &Item{value: sourceID, priority: dijkstraDistance[sourceID], index: 0}
 	heap.Init(&prioQ)
 	initTimeDiff := time.Since(initTime).Seconds()
-	//fmt.Printf("Time to initialize search: %.3fs\n", initTimeDiff)
 	searchTime := time.Now()
 	for {
 		//gets "best" next node
@@ -76,19 +68,9 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 	for dijkstraPrev[currentNode] >= 0 {
 		path = append(path, dijkstraPrev[currentNode])
 		currentNode = dijkstraPrev[currentNode]
-		//maybe error here??
-		// if currentNode < 0 {
-		// 	distance[destID] = -1
-		// 	break
-		// }
 	}
 	//if distance is "-1" -> no path found,
 	searchTimeDiff := time.Since(searchTime).Seconds()
-	// fmt.Printf("Time to search route: %.3fs\n", searchTimeDiff)
-	// fmt.Printf("Time total to calculate route: %.3fs\n", time.Since(totalTime).Seconds())
-	// fmt.Printf("distance: %dm\n", dist[destID])
-	// fmt.Printf("nodes in path: %d\n", len(path))
-	// fmt.Printf("Nodes popped: %d\n--\n", nodesPoppedCounter)
 	return dijkstraDistance[destID], path, initTimeDiff, searchTimeDiff, nodesPoppedCounter
 }
 

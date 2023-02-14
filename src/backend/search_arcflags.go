@@ -8,7 +8,6 @@ import (
 func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData ArcData, nodePartitionList []int) (int, []int, float64, float64, int) {
 	nodePartitionMatrix := arcData.NodePartitionMatrix
 	arcFlags := arcData.ArcFlags
-	//totalTime := time.Now()
 	destPartition := 0
 	initTime := time.Now()
 	nodesPoppedCounter := 0
@@ -23,23 +22,17 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 				dijkstraVisited[nodeID] = false
 				dijkstraDistance[nodeID] = 50000000
 				dijkstraPrev[nodeID] = -1
-				//prioQ[i] = &Item{value: nodeID, priority: dist[nodeID], index: i}
 			}
 			if nodeID == destID {
 				destPartition = nodePartitionMatrix[rowID][columnID]
 			}
 		}
 	}
-	// for nodeID, _ := range graph.Nodes {
-	// 	dist[nodeID] = 50000000
-	// 	prev[nodeID] = -1
-	// }
 
 	dijkstraDistance[sourceID] = 0
 	prioQ[0] = &Item{value: sourceID, priority: dijkstraDistance[sourceID], index: 0}
 	heap.Init(&prioQ)
 	initTimeDiff := time.Since(initTime).Seconds()
-	//fmt.Printf("Time to initialize search: %.3fs\n", initTimeDiff)
 	searchTime := time.Now()
 	for {
 		//gets "best" next node
@@ -70,7 +63,6 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 			break
 		}
 	}
-	//println(x / 1000)
 	var path []int
 	currentNode := destID
 	path = append(path, currentNode)
@@ -81,11 +73,6 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 	}
 	//if distance is "-1" -> no path found,
 	searchTimeDiff := time.Since(searchTime).Seconds()
-	// fmt.Printf("Time to search route: %.3fs\n", searchTimeDiff)
-	// fmt.Printf("Time total to calculate route: %.3fs\n", time.Since(totalTime).Seconds())
-	// fmt.Printf("distance: %dm\n", dist[destID])
-	// fmt.Printf("nodes in path: %d\n", len(path))
-	// fmt.Printf("Nodes popped: %d\n--\n", nodesPoppedCounter)
 	return dijkstraDistance[destID], path, initTimeDiff, searchTimeDiff, nodesPoppedCounter
 }
 

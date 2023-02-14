@@ -13,6 +13,7 @@ import (
 var graph backend.Graph
 var arcData backend.ArcData
 var nodePartitionList []int
+var runningActiveTests bool
 
 func main() {
 	fmt.Printf("Starting")
@@ -28,12 +29,46 @@ func startServer() {
 	http.Handle("/", http.FileServer(http.Dir("./frontend")))
 	http.HandleFunc("/getpoint", getPointHandler())
 	http.HandleFunc("/getroute", getRouteHandler())
-	http.HandleFunc("/directory", getDirectoryHandler())
-	http.HandleFunc("/preprocess", getPreprocessingHandler())
+	http.HandleFunc("/testalgorithms", getTestHandler())
+	http.HandleFunc("/querytestprogress", getProgressHandler())
+	http.HandleFunc("/abort", getAbortHandler())
 	println("GUI available on: localhost:8080")
 	println("READY!\n-----------")
 	http.ListenAndServe(":8080", nil)
 
+}
+
+func getAbortHandler() http.HandlerFunc {
+	abortHandler := func(writer http.ResponseWriter, request *http.Request) {
+		if runningActiveTests {
+			runningActiveTests = false
+			backend.AbortTests()
+		}
+	}
+	return abortHandler
+}
+func getTestHandler() http.HandlerFunc {
+	testHandler := func(writer http.ResponseWriter, request *http.Request) {
+		if !runningActiveTests {
+			runningActiveTests = true
+			urlQuery := request.URL.Query()
+			numOfTests, _ := strconv.ParseInt(urlQuery["num"][0], 0, 64)
+			backend.TestAlgorithms(graph, arcData, int(numOfTests), nodePartitionList)
+			runningActiveTests = false
+		}
+	}
+	return testHandler
+}
+
+func getProgressHandler() http.HandlerFunc {
+	progressHandler := func(writer http.ResponseWriter, request *http.Request) {
+
+		outputString := backend.GetTestStatusAsString()
+		writer.WriteHeader(http.StatusOK)
+		writer.Write([]byte(outputString))
+	}
+
+	return progressHandler
 }
 
 // checks for nearest valid neighbor node in water and returns this to the web interface
@@ -98,46 +133,6 @@ func getRouteString(src int64, dest int64, mode int64) string {
 	return output
 }
 
-// NOT IN USE!
-func getPreprocessingHandler() http.HandlerFunc {
-	proprocessHandler := func(writer http.ResponseWriter, request *http.Request) {
-		urlQuery := request.URL.Query()
-		processType, _ := strconv.ParseFloat(urlQuery["process"][0], 64)
-		processOption, _ := strconv.ParseFloat(urlQuery["option"][0], 64)
-
-		fmt.Printf("process type: %f\n", processType)
-		fmt.Printf("option: %f\n--\n", processOption)
-
-		outputString := "lol hier text"
-		writer.WriteHeader(http.StatusOK)
-		writer.Write([]byte(outputString))
-	}
-	return proprocessHandler
-}
-
-// NOT IN USE!
-func getDirectoryHandler() http.HandlerFunc {
-	directoryHandler := func(writer http.ResponseWriter, request *http.Request) {
-		urlQuery := request.URL.Query()
-		processType, _ := strconv.ParseFloat(urlQuery["process"][0], 64)
-		processOption, _ := strconv.ParseFloat(urlQuery["option"][0], 64)
-
-		fmt.Printf("process type: %f\n", processType)
-		fmt.Printf("option: %f\n--\n", processOption)
-
-		outputString := "lol hier text"
-		writer.WriteHeader(http.StatusOK)
-		writer.Write([]byte(outputString))
-	}
-	return directoryHandler
-}
-
-// NOT IN USE!
-func analyzeDirectory(basePath string) {
-	println("Reading directory...")
-
-}
-
 // creates a graph with the coastlines from the path and roughly the number of nodes
 func createGraph(pathToCoastlinesPBF string, numberOfNodes int) {
 	graph = backend.Graph{}
@@ -163,8 +158,8 @@ func initialize() {
 
 	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	//createGraph(antarctica, 100000)
-	//backend.GraphToFile(graph, graphPath)
+	// createGraph(antarctica, 100000)
+	// backend.GraphToFile(graph, graphPath)
 	//-----------------------------------------------------
 
 	// IMPORT GRAPH BY UNCOMMENTING BELOW:
@@ -174,36 +169,22 @@ func initialize() {
 
 	// PRINT TO GEOJSON BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	//backend.PrintPointsToGEOJSON(graph)
-	//backend.PrintEdgesToGEOJSON(graph)
+	// backend.PrintPointsToGEOJSON(graph)
+	// backend.PrintEdgesToGEOJSON(graph)
 	//-----------------------------------------------------
 
 	//arcFlagStuff
 	// GENERATE NEW ARCFLAGS BY UNCOMMENTING BELOW
 	// 7 - 3 generates roughly square partitions (64 of them)
-	//arcData = backend.PreprocessArcFlags(graph, 7, 3)
-	//backend.ArcFlagsToFile(arcData, arcFlagPath)
+	// arcData = backend.PreprocessArcFlags(graph, 7, 3)
+	// backend.ArcFlagsToFile(arcData, arcFlagPath)
 
 	// IMPORT ARCFLAGS BY UNCOMMENTING BELOW:
 	arcData = backend.FileToArcFlags(arcFlagPath)
-	//this speeds up arc flag since it doesnt have to calculate row/col of nodepartitionmatrix anymore
+	// this speeds up arc flag since it doesnt have to calculate row/col of nodepartitionmatrix anymore
 	preparePartitionList()
 }
 
 func testStuff() {
 	//backend.PrintPointsToGEOJSON2(graph, arcData.NodePartitionMatrix)
-	// for _, row := range graph.NodeMatrix {
-	// 	fmt.Printf("first lon: %3.3f - second lon: %3.3f\n", graph.Nodes[row[0]][0], graph.Nodes[row[1]][0])
-	// }
-	// for _, line := range arcFlags {
-	// 	fmt.Printf("%v\n", line)
-	// }
-	backend.TestAlgorithms(graph, arcData, 100, nodePartitionList)
-	// for _, row := range  backend.PreprocessArcFlags(graph, 8, 1){
-	// 	fmt.Printf("[")
-	// 	for _, val := range row {
-	// 		fmt.Printf("%t, ", val)
-	// 	}
-	// 	fmt.Printf("]\n")
-	// }
 }

@@ -6,7 +6,10 @@ var path1 = null
 var path2 = null
 var path3 = null
 var paths = []
-
+var estTimePerTest = 0.2
+var slider = document.getElementById("numOfTests");
+var output = document.getElementById("numDisplay");
+var queryIntervall
 
 function clickHandler(event){
     let url = new URL("http://localhost:8080/getpoint");
@@ -30,12 +33,106 @@ function clickHandler(event){
         addMarker(+coordinates[0],+coordinates[1], +coordinates[2])
     })
 }
+function abortHandler(){
+    let url = new URL("http://localhost:8080/abort");  
+    document.querySelector('#abortButton').disabled = true;
+    fetch(url)
+    clearInterval(queryIntervall)
+    setTimeout(()=>{
+        document.querySelector('#testButton').disabled = false;
+        document.querySelector('#routeButton').disabled = false;
+        document.getElementById("dijkstraBar").style.width = "0%"
+        document.getElementById("dijkstraBar").innerHTML ='';
+        document.getElementById("arcflagBar").style.width = "0%"
+        document.getElementById("arcflagBar").innerHTML ='';},500)
+}
+function testsHandler(){
+    isAborted = false
+    document.querySelector('#testButton').disabled = true;
+    document.querySelector('#routeButton').disabled = true;
+    document.querySelector('#abortButton').disabled = false;
+    document.getElementById("dijkstraBar").style.width = "0%"
+    document.getElementById("dijkstraBar").innerHTML ='';
+    document.getElementById("arcflagBar").style.width = "0%"
+    document.getElementById("arcflagBar").innerHTML ='';
+    var numOfTests = slider.value
+    let url = new URL("http://localhost:8080/testalgorithms");
+    url.searchParams.append("num", numOfTests);    
+    fetch(url)
+    queryIntervall = setInterval(()=>{
+        let url = new URL("http://localhost:8080/querytestprogress");
+        fetch(url).then((response) => {
+            //extracts the response
+            answer = response.text()
+            return answer
+        }).then((result) => {
+            //takes body of response and splits it into the coordinates lon then lat
+            answer = result.split("-")
+            dProgress = +answer[0]
+            aProgress = +answer[1]
+            updateBars(dProgress, aProgress)
+            //0 lon, 1 lat, the + before the coordinates casts the string valued coordinates into number values
+            //i hate javascript
+            if(dProgress== 100.0){
+                setTimeout(()=>{
+                    document.getElementById("dijkstraResult").innerHTML = answer[2]},600)            }            
+            if(aProgress== 100.0){                                
+                setTimeout(()=>{
+                    document.getElementById("arcflagResult").innerHTML = answer[3]},600)
+            }
+            if(dProgress == 100.0 && aProgress == 100.0){
+                document.querySelector('#testButton').disabled = false;
+                document.querySelector('#routeButton').disabled = false;
+                document.querySelector('#abortButton').disabled = true;
+                clearInterval(queryIntervall)
+            }
+        })
+    },500) 
+    //document.querySelector('#testButton').disabled = false;
+}
+
+function updateBars(dProg, aProg){
+    var dBar = document.getElementById("dijkstraBar");
+    var aBar = document.getElementById("arcflagBar");
+    var dWidth = +dBar.style.width.replace("%","");
+    var aWidth = +aBar.style.width.replace("%","");
+    var dStepSize = (dProg - dWidth) / 25.0
+    var aStepSize = (aProg - aWidth) / 25.0
+    var dIntervall = setInterval(dFrame, 20);
+    function dFrame() {
+        if (dWidth >= dProg) {
+            clearInterval(dIntervall);
+        } else {
+            dBar.style.width = dWidth + '%';
+            dBar.innerHTML = dWidth.toFixed(1) + '%';
+            dWidth += dStepSize;
+        }
+        // if(dProg == 100){            
+        //     dBar.style.width = '100%';
+        //     dBar.innerHTML = '100%';
+        // }
+    }
+    var aIntervall = setInterval(aFrame, 20);
+    function aFrame() {
+        if (aWidth >= aProg) {
+            clearInterval(aIntervall);
+        } else {
+            aBar.style.width = aWidth + '%';
+            aBar.innerHTML = aWidth.toFixed(1)  + '%';
+            aWidth += aStepSize;
+        }
+        // if(aProg == 100){            
+        //     aBar.style.width = '100%';
+        //     aBar.innerHTML = '100%';
+        // }
+    }
+      
+}
 
 function routeHandler(){
     srcID = start.id
     destID = dest.id
     mode = document.querySelector('input[name="alg"]:checked').value;
-    console.log(mode)
     if(start.id <0 || dest.id<0){
         return
     }
@@ -56,7 +153,6 @@ function routeHandler(){
         }
         distCoords = result.split("y")
         if (+distCoords[0] <0 || +distCoords[0]>45000000){
-            console.log("NO PATH FOUND!")
             document.getElementById("distance").value = "NO PATH FOUND"   
         } else{
             distance = +distCoords[0]
@@ -78,8 +174,6 @@ function routeHandler(){
                     coordinates = []
                     coordinates.push([lat, 180])
                     }
-                
-
             }
                 c = rawCoordinates[rawCoordinates.length-1].split("z")
                 lat = +c[1]
@@ -87,8 +181,6 @@ function routeHandler(){
                 coordinates.push([lat, lon])
                 paths.push(L.polyline(coordinates, {color: 'blue'}).addTo(map))
             document.getElementById("distance").value = ""+distance+"km"
-            
-            console.log("Path found with distance: "+distance+"km")
         }
         nodesPopped = distCoords[1]
         initTime = +distCoords[2]
@@ -135,8 +227,13 @@ function addMarker(lon, lat, id){
     isStart =! isStart
 }
 
-
-
+slider.oninput = function() {
+    output.innerHTML = this.value;    
+    minutes = Math.floor(estTimePerTest*this.value / 60);
+    seconds = Math.floor(estTimePerTest*this.value - minutes * 60);
+    document.querySelector('#estTime').innerHTML = minutes+"m "+seconds+"s"
+}
+slider.oninput()
 
 // https://www.youtube.com/watch?v=Fk-P5l7DJjo
 let mapOpions = {

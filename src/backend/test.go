@@ -3,13 +3,34 @@ package backend
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 )
 
+var dijkstaProgress float64 = 0
+var dijkstraResult string = ""
+var arcFlagProgress float64 = 0
+var arcFlagResult string = ""
+var shouldAbort = false
+
+func GetTestStatusAsString() string {
+	output := fmt.Sprintf("%.1f-%.1f-%s-%s", dijkstaProgress, arcFlagProgress, dijkstraResult, arcFlagResult)
+	return output
+}
+
 func TestAlgorithms(graph Graph, arcData ArcData, numberOfPaths int, nodePartitionList []int) {
+	shouldAbort = false
+	dijkstaProgress = 0.0
+	arcFlagProgress = 0.0
+	dijkstraResult = ""
+	arcFlagResult = ""
 	paths := generateTestPaths(graph, numberOfPaths)
 	testDijkstra(graph, numberOfPaths, paths)
 	testArcFlagDijkstra(graph, numberOfPaths, paths, arcData, nodePartitionList)
+}
+
+func AbortTests() {
+	shouldAbort = true
 }
 func testDijkstra(graph Graph, n int, paths [][]int) {
 	fmt.Printf("Starting Dijkstra test for %d routes...\n", n)
@@ -26,6 +47,10 @@ func testDijkstra(graph Graph, n int, paths [][]int) {
 	maxNodesPopped := 0
 	maxPathLength := 0
 	for i := 0; i < n; i++ {
+		if shouldAbort {
+			println("Dijkstra Aborted")
+			return
+		}
 		dist, path, initTime, searchTime, nodesPopped := CalculateDijkstra(graph, paths[i][0], paths[i][1])
 		if dist >= 0 {
 			totalDistance += dist
@@ -51,20 +76,25 @@ func testDijkstra(graph Graph, n int, paths [][]int) {
 		if nodesPopped > maxNodesPopped {
 			maxNodesPopped = nodesPopped
 		}
-
+		dijkstaProgress = 100.0 * float64(i) / float64(n-1)
 		if i%100 == 0 {
 			printTestProgress("Dijkstra", i, n)
 		}
 	}
 	//TEST: 1000 runs with average initialization time of: xxx and average search time of: xxx and longest total search of: xxx
 	//print results
-	fmt.Printf("-------\nTotal test time for %d routes: %.3fs (avg: %.3fs)\n", n, time.Since(totalTime).Seconds(), time.Since(totalTime).Seconds()/float64(n))
-	fmt.Printf("Average initialization time: %.3fs (max: %.3fs)\n", totalInitTime/float64(n), maxInitTime)
-	fmt.Printf("Average search time: %.3fs (max: %.3fs)\n", totalSearchTime/float64(n), maxSearchTime)
-	fmt.Printf("Average heap pops: %d pops (max: %d pops)\n", totalNodesPopped/n, maxNodesPopped)
-	fmt.Printf("Average distance: %dkm (max: %dkm)\n", totalDistance/(n-fails), maxDistance)
-	fmt.Printf("Average path length: %d nodes (max: %d nodes)\n", totalPathLength/(n-fails), maxPathLength)
-	fmt.Printf("Number of routes with no viable path: %d\n-------\n", fails)
+	stats := fmt.Sprintf("Total test time for %d routes: %.3fs (avg: %.3fs)\n", n, time.Since(totalTime).Seconds(), time.Since(totalTime).Seconds()/float64(n))
+	stats += fmt.Sprintf("Average initialization time: %.3fs (max: %.3fs)\n", totalInitTime/float64(n), maxInitTime)
+	stats += fmt.Sprintf("Average search time: %.3fs (max: %.3fs)\n", totalSearchTime/float64(n), maxSearchTime)
+	stats += fmt.Sprintf("Average heap pops: %d pops (max: %d pops)\n", totalNodesPopped/n, maxNodesPopped)
+	stats += fmt.Sprintf("Average distance: %dkm (max: %dkm)\n", totalDistance/(n-fails), maxDistance)
+	stats += fmt.Sprintf("Average path length: %d nodes (max: %d nodes)\n", totalPathLength/(n-fails), maxPathLength)
+	stats += fmt.Sprintf("Number of routes with no viable path: %d\n", fails)
+	println("-------")
+	println("NORMAL DIJKSTRA RESULTS:")
+	fmt.Printf(stats)
+	dijkstraResult = strings.ReplaceAll(stats, "\n", "<br>")
+	println("-------")
 }
 
 func testArcFlagDijkstra(graph Graph, n int, paths [][]int, arcData ArcData, nodePartitionList []int) {
@@ -82,6 +112,10 @@ func testArcFlagDijkstra(graph Graph, n int, paths [][]int, arcData ArcData, nod
 	maxNodesPopped := 0
 	maxPathLength := 0
 	for i := 0; i < n; i++ {
+		if shouldAbort {
+			println("Arc flags Aborted")
+			return
+		}
 		dist, path, initTime, searchTime, nodesPopped := CalculateArcFlagDijkstra(graph, paths[i][0], paths[i][1], arcData, nodePartitionList)
 		if dist >= 0 {
 			totalDistance += dist
@@ -108,19 +142,26 @@ func testArcFlagDijkstra(graph Graph, n int, paths [][]int, arcData ArcData, nod
 			maxNodesPopped = nodesPopped
 		}
 
+		arcFlagProgress = 100.0 * float64(i) / float64(n-1)
 		if i%100 == 0 {
 			printTestProgress("Arc Flags", i, n)
 		}
 	}
 	//TEST: 1000 runs with average initialization time of: xxx and average search time of: xxx and longest total search of: xxx
 	//print results
-	fmt.Printf("-------\nTotal test time for %d routes: %.3fs (avg: %.3fs)\n", n, time.Since(totalTime).Seconds(), time.Since(totalTime).Seconds()/float64(n))
-	fmt.Printf("Average initialization time: %.3fs (max: %.3fs)\n", totalInitTime/float64(n), maxInitTime)
-	fmt.Printf("Average search time: %.3fs (max: %.3fs)\n", totalSearchTime/float64(n), maxSearchTime)
-	fmt.Printf("Average heap pops: %d pops (max: %d pops)\n", totalNodesPopped/n, maxNodesPopped)
-	fmt.Printf("Average distance: %dkm (max: %dkm)\n", totalDistance/(n-fails), maxDistance)
-	fmt.Printf("Average path length: %d nodes (max: %d nodes)\n", totalPathLength/(n-fails), maxPathLength)
-	fmt.Printf("Number of routes with no viable path: %d\n-------\n", fails)
+	stats := fmt.Sprintf("Total test time for %d routes: %.3fs (avg: %.3fs)\n", n, time.Since(totalTime).Seconds(), time.Since(totalTime).Seconds()/float64(n))
+	stats += fmt.Sprintf("Average initialization time: %.3fs (max: %.3fs)\n", totalInitTime/float64(n), maxInitTime)
+	stats += fmt.Sprintf("Average search time: %.3fs (max: %.3fs)\n", totalSearchTime/float64(n), maxSearchTime)
+	stats += fmt.Sprintf("Average heap pops: %d pops (max: %d pops)\n", totalNodesPopped/n, maxNodesPopped)
+	stats += fmt.Sprintf("Average distance: %dkm (max: %dkm)\n", totalDistance/(n-fails), maxDistance)
+	stats += fmt.Sprintf("Average path length: %d nodes (max: %d nodes)\n", totalPathLength/(n-fails), maxPathLength)
+	stats += fmt.Sprintf("Number of routes with no viable path: %d\n", fails)
+	println("-------")
+	println("ARC FLAG RESULTS:")
+	fmt.Printf(stats)
+
+	arcFlagResult = strings.ReplaceAll(stats, "\n", "<br>")
+	println("-------")
 }
 
 func generateTestPaths(graph Graph, numberOfPaths int) [][]int {

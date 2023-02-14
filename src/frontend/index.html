@@ -29,10 +29,15 @@
             <span>
                 <p><strong>Algorithm:</strong></p>
                 <input type="radio" id="dijkstra" name="alg" value="0" checked="checked">
-                <label for="mc"> Dijkstra</label><br>
+                <label> Dijkstra</label><br>
                 <input type="radio" id="arcflag" name="alg" value="1">
-                <label for="vi"> Arc-Flag Dijkstra</label><br><br>
-                <input type="submit" value="Calculate Route" onclick="routeHandler()"><br><br>
+                <label> Arc-Flag</label><br>
+                <!-- <input type="radio" id="dijkstrabidi" name="alg" value="2">
+                <label> Dijkstra (Bi-Di)</label><br>
+                <input type="radio" id="arcflagbidi" name="alg" value="3">
+                <label> Arc-Flag (Bi-Di)</label><br><br> -->
+                <input id="routeButton" type="submit" value="Calculate Route" onclick="routeHandler()"
+                    style="margin-top: 5px"><br><br>
                 <label for="dist">Distance:</label>
                 <input type="text" id="distance" name="dist" value="0m" disabled readonly><br>
                 <label for="dist">Nodes popped:</label>
@@ -40,8 +45,40 @@
                 <label for="dist">Time:</label>
                 <input type="text" id="time" name="time" value="0ms" disabled readonly style="margin-bottom: 20px;">
             </span><br>
+
         </div>
         <div id="map"></div>
+    </div>
+    <hr style="width: 90%;height:2px;border-width:0;color:gray;background-color:gray; margin-left:5%">
+    <div class="box">
+        <span id="lefttest">
+            <p><strong>Tests:</strong></p>
+            <input type="range" min="100" max="10000" value="100" class="slider" step="100" id="numOfTests"><br>Tests:
+            <span id="numDisplay">100</span><br><span>Estimated Time: <span id="estTime"></span></span><br>
+            <input id="testButton" type="submit" value="Run Tests" onclick="testsHandler()" style="margin-top: 5px"><br>
+            <input id="abortButton" type="submit" value="Abort Tests" onclick="abortHandler()" style="margin-top: 5px"
+                disabled="true"><br><br>
+            <div class="w3-light-grey">
+
+
+            </div>
+        </span>
+        <span style="padding-left: 30px">
+            Dijkstra:
+            <div class="w3-border w3-center">
+                <div id="dijkstraBar" class="w3-container w3-green" style="height:24px;width:0%; padding: 0">
+                </div>
+            </div>
+            <div id="dijkstraResult"></div>
+        </span>
+        <span style="padding-left: 30px">
+            Arc-Flag:
+            <div class="w3-border">
+                <div id="arcflagBar" class="w3-container w3-green w3-center" style="height:24px;width:0%; padding: 0">
+                </div>
+            </div>
+            <div id="arcflagResult"></div>
+        </span><br>
     </div>
 </body>
 <script src="leaflet/leaflet-src.js"></script>

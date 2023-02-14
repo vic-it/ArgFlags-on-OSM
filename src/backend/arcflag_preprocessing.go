@@ -28,7 +28,6 @@ func PreprocessArcFlags(graph Graph, numOfRows int, numOfPoleRowPartitions int) 
 		}
 		arcFlags = append(arcFlags, tmp)
 	}
-	// singleSourceArcFlagPreprocess(graph, 22, arcFlags, numOfPartitions, nodePartitionMatrix, false)
 	boundaryNodeIDs := getBoundaryNodeIDS(graph, nodePartitionMatrix)
 	ctr := 0
 	processTimer = time.Now()
@@ -57,8 +56,8 @@ func PreprocessArcFlags(graph Graph, numOfRows int, numOfPoleRowPartitions int) 
 	fmt.Printf("Time to generate arc flags: %.3fs\n", time.Since(totalTime).Seconds())
 	return ArcData{arcFlags, nodePartitionMatrix, numOfPartitions}
 }
+
 func CreatePartitions(graph Graph, numOfRows int, numOfPoleRowPartitions int) ([][]int, int) {
-	// nodeCount := len(graph.Nodes)
 	rowCount := len(graph.NodeMatrix)
 	graphRowsPerPartitionRow := int(math.Ceil(float64(len(graph.NodeMatrix)) / float64(numOfRows)))
 	partitionRows := [][]int{}
@@ -80,18 +79,9 @@ func CreatePartitions(graph Graph, numOfRows int, numOfPoleRowPartitions int) ([
 	for id, _ := range partitionRows {
 		//calc how many partitions per row
 		partitionsPerRow = append(partitionsPerRow, int(math.Ceil(float64(nodesPerRow[id])/(float64(nodesPerRow[0])/float64(numOfPoleRowPartitions)))))
-		// fmt.Printf("partition row %d: %d rows - %d nodes - %d partitions\n", id, len(row), nodesPerRow[id], partitionsPerRow[id])
 	}
 	fmt.Printf("Rough nodes per partition: %d\n---\n", nodesPerRow[0]/numOfPoleRowPartitions)
-	//---------------------------------------------------------------------------------
-	//---------------------------------------------------------------------------------
-	//---------------------------------------------------------------------------------
-	//---------------------------------------------------------------------------------
-	//---------------------------------------------------------------------------------
-	//---------------------------------------------------------------------------------
-	//---------------------------------------------------------------------------------
-	//---------------------------------------------------------------------------------
-	//---------------------------------------------------------------------------------
+
 	// calc column split of graph matrix rows
 	//same as nodematrix but values are IDs of partitions
 	numberOfPartitions := 0
@@ -136,24 +126,6 @@ func CreatePartitions(graph Graph, numOfRows int, numOfPoleRowPartitions int) ([
 
 	fmt.Printf("node matrix rows: %d\npartition matrix rows: %d\n", len(graph.NodeMatrix), len(nodePartitionMatrix))
 	fmt.Printf("number of partitions total: %d\n", numberOfPartitions)
-	// for rowID, row := range graph.NodeMatrix {
-	// 	fmt.Printf("diff: %d\n", len(row)-len(nodePartitionMatrix[rowID]))
-	// 	fmt.Println(nodePartitionMatrix[rowID])
-	// }
-	//fmt.Println(nodePartitionMatrix[0])
-	// fmt.Println(nodePartitionMatrix[1])
-	// fmt.Println(nodePartitionMatrix[2])
-	// fmt.Println(nodePartitionMatrix[4])
-	// fmt.Println(nodePartitionMatrix[5])
-	// fmt.Println(nodePartitionMatrix[6])
-	// println("---------")
-	// fmt.Println(nodePartitionMatrix[len(nodePartitionMatrix)-7])
-	// fmt.Println(nodePartitionMatrix[len(nodePartitionMatrix)-6])
-	// fmt.Println(nodePartitionMatrix[len(nodePartitionMatrix)-5])
-	// fmt.Println(nodePartitionMatrix[len(nodePartitionMatrix)-4])
-	// fmt.Println(nodePartitionMatrix[len(nodePartitionMatrix)-3])
-	// fmt.Println(nodePartitionMatrix[len(nodePartitionMatrix)-2])
-	// fmt.Println(nodePartitionMatrix[len(nodePartitionMatrix)-1])
 	return nodePartitionMatrix, numberOfPartitions
 }
 
@@ -250,16 +222,14 @@ func singleSourceArcFlagPreprocess(graph Graph, sourceID int, arcFlags [][]bool,
 			prevNodeID := graph.Sources[prevEdges[thisNodeID]]
 			// -> add (stored) arcflags for reverseEdgeOf(prev)
 			reverseEdgeID := getReverseEdgeID(graph, prevEdges[thisNodeID])
-			copy(partitionsVisited[thisNodeID], partitionsVisited[prevNodeID])
-			//partitionsVisited[thisNodeID] = partitionsVisited[prevNodeID]
+			//partitionsVisited[thisNodeID] = partitionsVisited[prevNodeID]  <-- bad!
+			copy(partitionsVisited[thisNodeID], partitionsVisited[prevNodeID]) // <-- good!
 			for pID, f := range partitionsVisited[thisNodeID] {
 				arcFlags[reverseEdgeID][pID] = (f || arcFlags[reverseEdgeID][pID])
 			}
 			//below version has far less false "true"s but is also very inefficient and for some reason not exactly correct
 			partitionsVisited[thisNodeID][thisNodesPartition] = true
 		}
-
-		//
 
 		nodesPoppedCounter++
 		// if we are at the destination then we break!
@@ -276,20 +246,18 @@ func singleSourceArcFlagPreprocess(graph Graph, sourceID int, arcFlags [][]bool,
 				heap.Push(&prioQ, &Item{value: neighbor[0], priority: alt, index: neighbor[0]})
 			}
 		}
-
 	}
-
 	if test {
 		defer wg.Done()
 	}
 }
 
-// calculates arc flags for given target node back to its source
+// calculates arc flags for given target node back to its source (NOT IN USE)
 func addArcFlags(graph Graph, nodeID int, arcFlags [][]bool, prev []int, numOfPartitions int, nodePartitionMatrix [][]int, checkList []bool) {
 	currNode := nodeID
 	partitionFlags := []bool{}
 	edgeIDList := []int{}
-	//fill empty partition flags
+	// fill empty partition flags
 	for i := 0; i <= numOfPartitions; i++ {
 		partitionFlags = append(partitionFlags, false)
 	}
@@ -338,32 +306,7 @@ func printPreProcessProgress(current int, max int) {
 
 // actually calculates a dijkstra route with arc flags
 
-func ensureBidirectionality(graph Graph, arcFlags [][]bool) {
-	println("Ensuring bi-directionality of arc flags...")
-	timer := time.Now()
-	for edgeID, flags := range arcFlags {
-		reverseEdgeID := getReverseEdgeID(graph, edgeID)
-		if reverseEdgeID >= 0 {
-			for partitionID, flag := range flags {
-				if flag {
-					arcFlags[reverseEdgeID][partitionID] = true
-				}
-			}
-		}
-	}
-	getReverseEdgeID(graph, 200)
-	fmt.Printf("Time to ensure bi-directionality of arc flags: %.3fs\n", time.Since(timer).Seconds())
-}
-
-//MULTI STUFF -------------------------------------------------
-//MULTI STUFF -------------------------------------------------
-//MULTI STUFF -------------------------------------------------
-//MULTI STUFF -------------------------------------------------
-//MULTI STUFF -------------------------------------------------
-//MULTI STUFF -------------------------------------------------
-//MULTI STUFF -------------------------------------------------
-//MULTI STUFF -------------------------------------------------
-//MULTI STUFF -------------------------------------------------
+//MULTI STUFF ----------(NOT IN USE ANYMORE)----------------------------
 
 func MultiSourceArcFlagPreprocess(graph Graph, sourcePartition int, arcFlags [][]bool, numOfPartitions int, nodePartitionMatrix [][]int) {
 	preprocessTime := time.Now()
@@ -509,6 +452,8 @@ func (s byDistance) Swap(i, j int) {
 func (s byDistance) Less(i, j int) bool {
 	return s[i][1] > s[j][1]
 }
+
+// not in use
 func addBatchArcFlags(graph Graph, nodeID int, arcFlags [][]bool, prev [][]int, numOfPartitions int, nodePartitionMatrix [][]int, checkList [][]bool, batchID int) {
 	currNode := nodeID
 	partitionFlags := []bool{}

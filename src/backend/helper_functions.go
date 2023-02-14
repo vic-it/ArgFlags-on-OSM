@@ -20,12 +20,7 @@ func IsPointInWater(node []float64, coastline Coastline) bool {
 		secondNodeLon := coastline.Nodes[coastline.Edges[e][1]][0]
 		secondNodeLat := coastline.Nodes[coastline.Edges[e][1]][1]
 		guaranteedCount += isEdgeInTheWay(node, [][]float64{{firstNodeLon, firstNodeLat}, {secondNodeLon, secondNodeLat}})
-		// fmt.Printf("lat: [%f to %f]\n", firstNodeLat, secondNodeLat)
-		// fmt.Printf("lon: [%f to %f]\n-\n", firstNodeLon, secondNodeLon)
 	}
-	// fmt.Printf("count: %d\n", guaranteedCount-x)
-
-	// fmt.Printf("(%f/%f) in water: %t\n", node[0], node[1], guaranteedCount%2 == 0)
 	return guaranteedCount%2 == 0
 }
 

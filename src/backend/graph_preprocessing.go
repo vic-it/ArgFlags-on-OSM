@@ -116,15 +116,7 @@ func GenerateEdges(points [][]float64, indexMatrix [][]int, pointsInWaterMatrix 
 						fwEdgeDest = append(fwEdgeDest, indexMatrix[y][x+1])
 					}
 				}
-				//add below edge
-				// if y != 0 {
-				// 	position := int(math.Round(float64(x * len(indexMatrix[y-1]) / len(indexMatrix[y]))))
-				// 	if pointsInWaterMatrix[y-1][position] {
 
-				// 		fwEdgeSources = append(fwEdgeSources, indexMatrix[y][x])
-				// 		fwEdgeDest = append(fwEdgeDest, indexMatrix[y-1][position])
-				// 	}
-				// }
 				//add above edge as well as a backwards edge "below edge" for the node above to this one
 				if y != len(indexMatrix)-1 {
 					position := int(math.Round(float64(x * len(indexMatrix[y+1]) / len(indexMatrix[y]))))
@@ -186,10 +178,6 @@ func mergeEdges(fwsrc []int, fwdest []int, bwEdges [][]int, n int) ([]int, []int
 		}
 	}
 
-	// fmt.Printf("merged size: %d\n", len(mergedSrc))
-	// for u := 2000; u < int(math.Min(float64(len(offsetList)), 2100.0)); u++ {
-	// 	fmt.Printf("Offset for node %d: %d\n", u, offsetList[u])
-	// }
 	return mergedSrc, mergedDest, offsetList
 }
 

@@ -40,7 +40,6 @@ function abortHandler(){
     clearInterval(queryIntervall)
     setTimeout(()=>{
         document.querySelector('#testButton').disabled = false;
-        document.querySelector('#routeButton').disabled = false;
         document.getElementById("dijkstraBar").style.width = "0%"
         document.getElementById("dijkstraBar").innerHTML ='';
         document.getElementById("arcflagBar").style.width = "0%"
@@ -49,7 +48,6 @@ function abortHandler(){
 function testsHandler(){
     isAborted = false
     document.querySelector('#testButton').disabled = true;
-    document.querySelector('#routeButton').disabled = true;
     document.querySelector('#abortButton').disabled = false;
     document.getElementById("dijkstraBar").style.width = "0%"
     document.getElementById("dijkstraBar").innerHTML ='';
@@ -88,7 +86,6 @@ function testsHandler(){
             }
             if(dProgress == 100.0 && aProgress == 100.0){
                 document.querySelector('#testButton').disabled = false;
-                document.querySelector('#routeButton').disabled = false;
                 document.querySelector('#abortButton').disabled = true;
                 clearInterval(queryIntervall)
             }
@@ -143,6 +140,7 @@ function routeHandler(){
         return
     }
     
+    document.querySelector('#routeButton').disabled = true;
     let url = new URL("http://localhost:8080/getroute");
     url.searchParams.append("src", srcID);
     url.searchParams.append("dest", destID);
@@ -198,6 +196,7 @@ function routeHandler(){
         totalTime = Math. round((initTime+searchTime)*1000)
         document.getElementById("nodes").value = ""+nodesPopped
         document.getElementById("time").value = ""+totalTime+"ms"
+        document.querySelector('#routeButton').disabled = false;
     })
 }
 

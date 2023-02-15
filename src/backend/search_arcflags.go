@@ -6,91 +6,81 @@ import (
 )
 
 func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData ArcData, nodePartitionList []int) (int, []int, float64, float64, int) {
-	nodePartitionMatrix := arcData.NodePartitionMatrix
-	arcFlags := arcData.ArcFlags
-	destPartition := 0
 	initTime := time.Now()
+	visited := make([]bool, len(graph.Nodes))
+	dist := make([]int, len(graph.Nodes))
+	prev := make([]int, len(graph.Nodes))
+	destPartition := nodePartitionList[destID]
 	nodesPoppedCounter := 0
 
 	//priority queue datastructure (see priority_queue.go)
-	var prioQ = make(PriorityQueue, 1)
+	prioQ := &PriorityQueue{{priority: 0, value: sourceID}}
 
+	//simply iterating over every single node
 	for rowID, row := range graph.NodeInWaterMatrix {
 		for columnID, isInWater := range row {
 			nodeID := graph.NodeMatrix[rowID][columnID]
 			if isInWater {
-				dijkstraVisited[nodeID] = false
-				dijkstraDistance[nodeID] = 50000000
-				dijkstraPrev[nodeID] = -1
-			}
-			if nodeID == destID {
-				destPartition = nodePartitionMatrix[rowID][columnID]
+				dist[nodeID] = -1
+				prev[nodeID] = -1
 			}
 		}
 	}
-
-	dijkstraDistance[sourceID] = 0
-	prioQ[0] = &Item{value: sourceID, priority: dijkstraDistance[sourceID], index: 0}
-	heap.Init(&prioQ)
+	dist[sourceID] = 0
 	initTimeDiff := time.Since(initTime).Seconds()
 	searchTime := time.Now()
-	for {
+	for prioQ.Len() > 0 {
 		//gets "best" next node
-		node := heap.Pop(&prioQ).(*Item)
+		node := heap.Pop(prioQ).(*Item)
+		// if we are at the destination then we break!
 		if node.value == destID {
 			break
 		}
-		dijkstraVisited[node.value] = true
+		if visited[node.value] {
+			continue
+		}
+		nodeID := node.value
+		visited[node.value] = true
 		nodesPoppedCounter++
-		// if we are at the destination then we break!
+		currentNodePartition := nodePartitionList[node.value] //
 
 		// gets all neighbor/connected nodes
-
-		currentNodePartition := nodePartitionList[node.value] //
-		neighbors := getArcFlagRouteNeighbors(graph.Targets, graph.Offsets, graph.Weights, node.value, arcFlags, destPartition, currentNodePartition)
-		for _, neighbor := range neighbors {
-			alt := dijkstraDistance[node.value] + neighbor[1]
-			// neighbor [0] is target node ID
-			if alt < dijkstraDistance[neighbor[0]] {
-				dijkstraDistance[neighbor[0]] = alt
-				dijkstraPrev[neighbor[0]] = node.value
-				//just re-queue items with better value instead of updating it
-				heap.Push(&prioQ, &Item{value: neighbor[0], priority: alt, index: neighbor[0]})
+		startIndex := graph.Offsets[nodeID]
+		endIndex := 0
+		var neighbors [][]int
+		if nodeID == len(graph.Offsets)-1 {
+			endIndex = len(graph.Targets)
+		} else {
+			endIndex = graph.Offsets[nodeID+1]
+		}
+		for i := startIndex; i < endIndex; i++ {
+			if visited[graph.Targets[i]] {
+				continue
+			}
+			if arcData.ArcFlags[i][destPartition] || destPartition == currentNodePartition {
+				neighbors = append(neighbors, []int{graph.Targets[i], graph.Weights[i]})
 			}
 		}
-		if prioQ.Len() < 1 || dijkstraDistance[node.value] >= 50000000 {
-			dijkstraDistance[destID] = -1
-			break
+		for _, neighbor := range neighbors {
+			alt := dist[node.value] + neighbor[1]
+			// neighbor [0] is target node ID
+			if dist[neighbor[0]] < 0 || alt < dist[neighbor[0]] {
+				dist[neighbor[0]] = alt
+				prev[neighbor[0]] = node.value
+				//just re-queue items with better value instead of updating it
+				heap.Push(prioQ, &Item{value: neighbor[0], priority: alt})
+			}
 		}
 	}
 	var path []int
 	currentNode := destID
 	path = append(path, currentNode)
 	// starts from the destination node and iterates backwards to source node, creating the path
-	for dijkstraPrev[currentNode] >= 0 {
-		path = append(path, dijkstraPrev[currentNode])
-		currentNode = dijkstraPrev[currentNode]
+	for prev[currentNode] >= 0 {
+		path = append(path, prev[currentNode])
+		currentNode = prev[currentNode]
 	}
 	//if distance is "-1" -> no path found,
 	searchTimeDiff := time.Since(searchTime).Seconds()
-	return dijkstraDistance[destID], path, initTimeDiff, searchTimeDiff, nodesPoppedCounter
-}
-
-// returns the neighbors by their [nodeID, distance]
-func getArcFlagRouteNeighbors(destinations []int, offsets []int, weights []int, nodeID int, arcFlags [][]bool, destPartition int, currentNodePartition int) [][]int {
-	// start index of edges determined by offset list
-	startIndex := offsets[nodeID]
-	endIndex := 0
-	var neighborIDList [][]int
-	if nodeID == len(offsets)-1 {
-		endIndex = len(destinations)
-	} else {
-		endIndex = offsets[nodeID+1]
-	}
-	for i := startIndex; i < endIndex; i++ {
-		if (arcFlags[i][destPartition] || destPartition == currentNodePartition) && !dijkstraVisited[destinations[i]] {
-			neighborIDList = append(neighborIDList, []int{destinations[i], weights[i]})
-		}
-	}
-	return neighborIDList
+	return dist[destID], path, initTimeDiff, searchTimeDiff, nodesPoppedCounter
 }

@@ -151,6 +151,25 @@ func getBoundaryNodeIDS(graph Graph, nodePartitionMatrix [][]int) []int {
 	return boundaryNodeIDS
 }
 
+// // returns all neighbro node IDs connected to the input node
+func GetGraphNeighbors(destinations []int, offsets []int, weights []int, nodeID int) [][]int {
+	// start index of edges determined by offset list
+	startIndex := offsets[nodeID]
+	endIndex := 0
+	var neighborIDList [][]int
+	if nodeID == len(offsets)-1 {
+		endIndex = len(destinations)
+	} else {
+		endIndex = offsets[nodeID+1]
+	}
+	for i := startIndex; i < endIndex; i++ {
+
+		neighborIDList = append(neighborIDList, []int{destinations[i], weights[i]})
+
+	}
+	return neighborIDList
+}
+
 // returns all boundary nodes of a partition
 func getBoundaryNodesOfPartition(graph Graph, nodePartitionMatrix [][]int, partition int) []int {
 	boundaryNodeIDS := []int{}
@@ -197,7 +216,7 @@ func singleSourceArcFlagPreprocess(graph Graph, sourceID int, arcFlags [][]bool,
 	partitionsVisited[sourceID][sourceNodesPartition] = true
 
 	distance[sourceID] = 0
-	prioQ[0] = &Item{value: sourceID, priority: distance[sourceID], index: 0}
+	prioQ[0] = &Item{value: sourceID, priority: distance[sourceID]}
 	heap.Init(&prioQ)
 	for {
 		//gets "best" next node
@@ -243,7 +262,7 @@ func singleSourceArcFlagPreprocess(graph Graph, sourceID int, arcFlags [][]bool,
 				distance[neighbor[0]] = alt
 				prevEdges[neighbor[0]] = neighbor[2]
 				//just re-queue items with better value instead of updating it
-				heap.Push(&prioQ, &Item{value: neighbor[0], priority: alt, index: neighbor[0]})
+				heap.Push(&prioQ, &Item{value: neighbor[0], priority: alt})
 			}
 		}
 	}
@@ -352,7 +371,7 @@ func MultiSourceArcFlagPreprocess(graph Graph, sourcePartition int, arcFlags [][
 
 			}
 		}
-		prioQ[i] = &Item{value: sourceNodeID, priority: 1, index: i}
+		prioQ[i] = &Item{value: sourceNodeID, priority: 1}
 	}
 
 	fmt.Printf("preprocess  done, time since start: %.3fs\n", time.Since(preprocessTime).Seconds())
@@ -385,7 +404,7 @@ func MultiSourceArcFlagPreprocess(graph Graph, sourcePartition int, arcFlags [][
 			}
 			//only re-queue if any value changed
 			if valChangedCounter > 0 {
-				heap.Push(&prioQ, &Item{value: neighbor[0], priority: 1 + int(minDist/valChangedCounter), index: neighbor[0]})
+				heap.Push(&prioQ, &Item{value: neighbor[0], priority: 1 + int(minDist/valChangedCounter)})
 			} else {
 
 			}

@@ -17,14 +17,9 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 	prioQ := &PriorityQueue{{priority: 0, value: sourceID}}
 
 	//simply iterating over every single node
-	for rowID, row := range graph.NodeInWaterMatrix {
-		for columnID, isInWater := range row {
-			nodeID := graph.NodeMatrix[rowID][columnID]
-			if isInWater {
-				dist[nodeID] = -1
-				prev[nodeID] = -1
-			}
-		}
+	for nodeID := range graph.Nodes {
+		dist[nodeID] = -1
+		prev[nodeID] = -1
 	}
 	dist[sourceID] = 0
 	initTimeDiff := time.Since(initTime).Seconds()

@@ -1,11 +1,11 @@
 1.  Export this ZIP file to any directory but keep the following structure within the project:	 
 	|
-- /OSM
+	|- /OSM
 	|	- /data
 	|		- graph.graph
-	|		- possibly other files...
+	|		- arc.flags
 	|			
-	|	- /OSM-FMI
+	|	- /OSMFMI
 	|		- /src
 	|		- go.sum
 	|		- all other files...
@@ -15,8 +15,8 @@
 	- the program was tested on a "Ubuntu 20.04 64bit" VM
 	- with go version "go 1.19.4"
 	
-3. Open a terminal in the OSM/OSM-FMI/src directory and type "go run main.go"
-	- In the current version the program will import a pre-processed (by the same program) graph with roughly 1 million nodes
+3. Open a terminal in the OSM/OSMFMI/src directory and type "go run main.go"
+	- In the current version the program will import the pre-processed (by the same program) graph and arc flags respectively
 	- It will then open a web interface on port 8080
 
 4. Go to localhost:8080 in a browser of your choice (tested on firefox and chrome)
@@ -27,5 +27,5 @@
 	- To calculate the shortest path between the nodes press "Calculate Route"
 		- If there is a valid path the distance will be shown next to the button and the path will be drawn onto the map
 		- If there is no valid path the same text field will say so!
-	- In case anything goes wrong, there is a backup graph in /OSM-FMI
+	- To run tests (anywhere from 100 to 10000 runs), at the bottom of the page there is an intuitive interface for it
 		

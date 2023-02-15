@@ -32,11 +32,11 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 	for prioQ.Len() > 0 {
 		//gets "best" next node
 		node := heap.Pop(prioQ).(*Item)
-		if node.value == destID {
-			break
-		}
 		if visited[node.value] {
 			continue
+		}
+		if node.value == destID {
+			break
 		}
 		nodeID := node.value
 		visited[nodeID] = true

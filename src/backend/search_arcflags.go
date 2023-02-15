@@ -32,12 +32,12 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 	for prioQ.Len() > 0 {
 		//gets "best" next node
 		node := heap.Pop(prioQ).(*Item)
+		if visited[node.value] {
+			continue
+		}
 		// if we are at the destination then we break!
 		if node.value == destID {
 			break
-		}
-		if visited[node.value] {
-			continue
 		}
 		nodeID := node.value
 		visited[node.value] = true

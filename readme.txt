@@ -28,4 +28,6 @@
 		- If there is a valid path the distance will be shown next to the button and the path will be drawn onto the map
 		- If there is no valid path the same text field will say so!
 	- To run tests (anywhere from 100 to 10000 runs), at the bottom of the page there is an intuitive interface for it
+	- Do note that because the nodes are spread equidistantly on the graph, there are usually multiple shortest paths
+		- because of this the dijkstra and the arc flags algorithm might produce different paths, although both are optimal and identical in length
 		

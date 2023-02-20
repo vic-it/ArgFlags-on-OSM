@@ -29,22 +29,22 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 	for prioQ.Len() > 0 {
 		//gets "best" next node
 		node := heap.Pop(prioQ).(*Item)
+		currentNodeID := node.value
 		//ignore already popped nodes
-		if visited[node.value] {
+		if visited[currentNodeID] {
 			continue
 		}
 		// if we are at the destination then we break!
-		if node.value == destID {
+		if currentNodeID == destID {
 			break
 		}
-		nodeID := node.value
-		visited[node.value] = true
+		visited[currentNodeID] = true
 		nodesPoppedCounter++
-		currentNodePartition := nodePartitionList[node.value] //
+		currentNodePartition := nodePartitionList[currentNodeID] //
 
 		// gets all neighbor/connected nodes
-		startIndex := graph.Offsets[nodeID]
-		endIndex := graph.Offsets[nodeID+1]
+		startIndex := graph.Offsets[currentNodeID]
+		endIndex := graph.Offsets[currentNodeID+1]
 
 		for i := startIndex; i < endIndex; i++ {
 			neighbor := graph.Targets[i]
@@ -52,10 +52,10 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 				continue
 			}
 			if arcData.ArcFlags[i][destPartition] || destPartition == currentNodePartition {
-				alt := dist[node.value] + graph.Weights[i]
+				alt := dist[currentNodeID] + graph.Weights[i]
 				if alt < dist[neighbor] {
 					dist[neighbor] = alt
-					prev[neighbor] = node.value
+					prev[neighbor] = currentNodeID
 					//just re-queue items with better value instead of updating it
 					heap.Push(prioQ, &Item{value: neighbor, priority: alt})
 				}

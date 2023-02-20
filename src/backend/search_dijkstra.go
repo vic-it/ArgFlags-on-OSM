@@ -28,30 +28,30 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 	for prioQ.Len() > 0 {
 		//gets "best" next node
 		node := heap.Pop(prioQ).(*Item)
-		if visited[node.value] {
+		currentNodeID := node.value
+		if visited[currentNodeID] {
 			continue
 		}
-		if node.value == destID {
+		if currentNodeID == destID {
 			break
 		}
-		nodeID := node.value
-		visited[nodeID] = true
+		visited[currentNodeID] = true
 		nodesPoppedCounter++
 		// if we are at the destination then we break!
 
 		// gets all neighbor/connected nodes
-		startIndex := graph.Offsets[nodeID]
-		endIndex := graph.Offsets[nodeID+1]
+		startIndex := graph.Offsets[currentNodeID]
+		endIndex := graph.Offsets[currentNodeID+1]
 
 		for i := startIndex; i < endIndex; i++ {
 			neighbor := graph.Targets[i]
 			if visited[neighbor] {
 				continue
 			}
-			alt := dist[node.value] + graph.Weights[i]
+			alt := dist[currentNodeID] + graph.Weights[i]
 			if alt < dist[neighbor] {
 				dist[neighbor] = alt
-				prev[neighbor] = node.value
+				prev[neighbor] = currentNodeID
 				//just re-queue items with better value instead of updating it
 				heap.Push(prioQ, &Item{value: neighbor, priority: alt})
 			}

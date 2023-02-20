@@ -171,6 +171,7 @@ func FileToGraph(path string) Graph {
 			}
 		}
 	}
+	graph.Offsets = append(graph.Offsets, len(graph.Targets))
 	graph.countOfWaterNodes = countOfNodesInWater
 	//END
 	if err := scanner.Err(); err != nil {

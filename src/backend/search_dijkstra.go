@@ -8,16 +8,17 @@ import (
 // calculates the shortest path between two nodes (on a graph) via dijkstras algorithm
 func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float64, float64, int) {
 	initTime := time.Now()
-	visited := make([]bool, len(graph.Nodes))
-	dist := make([]int, len(graph.Nodes))
-	prev := make([]int, len(graph.Nodes))
+	numOfNodes := len(graph.Nodes)
+	visited := make([]bool, numOfNodes)
+	dist := make([]int, numOfNodes)
+	prev := make([]int, numOfNodes)
 	nodesPoppedCounter := 0
 	//priority queue datastructure (see priority_queue.go)
 	prioQ := &PriorityQueue{{priority: 0, value: sourceID}}
 
 	//simply iterating over every single node
 	for nodeID := range graph.Nodes {
-		dist[nodeID] = -1
+		dist[nodeID] = 500000000
 		prev[nodeID] = -1
 	}
 
@@ -40,29 +41,19 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 
 		// gets all neighbor/connected nodes
 		startIndex := graph.Offsets[nodeID]
-		endIndex := 0
-		var neighbors [][]int
-		if nodeID == len(graph.Offsets)-1 {
-			endIndex = len(graph.Targets)
-		} else {
-			endIndex = graph.Offsets[nodeID+1]
-		}
+		endIndex := graph.Offsets[nodeID+1]
+
 		for i := startIndex; i < endIndex; i++ {
-			if visited[graph.Targets[i]] {
+			neighbor := graph.Targets[i]
+			if visited[neighbor] {
 				continue
 			}
-			neighbors = append(neighbors, []int{graph.Targets[i], graph.Weights[i]})
-
-		}
-		//for each neighbor...
-		for _, neighbor := range neighbors {
-			alt := dist[node.value] + neighbor[1]
-			// neighbor [0] is target node ID
-			if dist[neighbor[0]] < 0 || alt < dist[neighbor[0]] {
-				dist[neighbor[0]] = alt
-				prev[neighbor[0]] = node.value
+			alt := dist[node.value] + graph.Weights[i]
+			if alt < dist[neighbor] {
+				dist[neighbor] = alt
+				prev[neighbor] = node.value
 				//just re-queue items with better value instead of updating it
-				heap.Push(prioQ, &Item{value: neighbor[0], priority: alt})
+				heap.Push(prioQ, &Item{value: neighbor, priority: alt})
 			}
 		}
 	}
@@ -74,6 +65,9 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 	for prev[currentNode] >= 0 {
 		path = append(path, prev[currentNode])
 		currentNode = prev[currentNode]
+	}
+	if dist[destID] >= 500000000 {
+		dist[destID] = -1
 	}
 	//if distance is "-1" -> no path found,
 	searchTimeDiff := time.Since(searchTime).Seconds()

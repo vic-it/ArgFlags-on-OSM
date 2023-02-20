@@ -7,9 +7,11 @@ import (
 
 func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData ArcData, nodePartitionList []int) (int, []int, float64, float64, int) {
 	initTime := time.Now()
-	visited := make([]bool, len(graph.Nodes))
-	dist := make([]int, len(graph.Nodes))
-	prev := make([]int, len(graph.Nodes))
+
+	numOfNodes := len(graph.Nodes)
+	visited := make([]bool, numOfNodes)
+	dist := make([]int, numOfNodes)
+	prev := make([]int, numOfNodes)
 	destPartition := nodePartitionList[destID]
 	nodesPoppedCounter := 0
 
@@ -18,7 +20,7 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 
 	//simply iterating over every single node
 	for nodeID := range graph.Nodes {
-		dist[nodeID] = -1
+		dist[nodeID] = 500000000
 		prev[nodeID] = -1
 	}
 	dist[sourceID] = 0
@@ -27,6 +29,7 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 	for prioQ.Len() > 0 {
 		//gets "best" next node
 		node := heap.Pop(prioQ).(*Item)
+		//ignore already popped nodes
 		if visited[node.value] {
 			continue
 		}
@@ -41,29 +44,21 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 
 		// gets all neighbor/connected nodes
 		startIndex := graph.Offsets[nodeID]
-		endIndex := 0
-		var neighbors [][]int
-		if nodeID == len(graph.Offsets)-1 {
-			endIndex = len(graph.Targets)
-		} else {
-			endIndex = graph.Offsets[nodeID+1]
-		}
+		endIndex := graph.Offsets[nodeID+1]
+
 		for i := startIndex; i < endIndex; i++ {
-			if visited[graph.Targets[i]] {
+			neighbor := graph.Targets[i]
+			if visited[neighbor] {
 				continue
 			}
 			if arcData.ArcFlags[i][destPartition] || destPartition == currentNodePartition {
-				neighbors = append(neighbors, []int{graph.Targets[i], graph.Weights[i]})
-			}
-		}
-		for _, neighbor := range neighbors {
-			alt := dist[node.value] + neighbor[1]
-			// neighbor [0] is target node ID
-			if dist[neighbor[0]] < 0 || alt < dist[neighbor[0]] {
-				dist[neighbor[0]] = alt
-				prev[neighbor[0]] = node.value
-				//just re-queue items with better value instead of updating it
-				heap.Push(prioQ, &Item{value: neighbor[0], priority: alt})
+				alt := dist[node.value] + graph.Weights[i]
+				if alt < dist[neighbor] {
+					dist[neighbor] = alt
+					prev[neighbor] = node.value
+					//just re-queue items with better value instead of updating it
+					heap.Push(prioQ, &Item{value: neighbor, priority: alt})
+				}
 			}
 		}
 	}

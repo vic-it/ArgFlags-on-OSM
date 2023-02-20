@@ -159,7 +159,7 @@ func initialize() {
 
 	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
 	//-----------------------------------------------------
-	// createGraph(antarctica, 100000)
+	// createGraph(antarctica, 1000000)
 	// backend.GraphToFile(graph, graphPath)
 	//-----------------------------------------------------
 
@@ -177,7 +177,7 @@ func initialize() {
 	//arcFlagStuff
 	// GENERATE NEW ARCFLAGS BY UNCOMMENTING BELOW
 	// 7 - 3 generates roughly square partitions (64 of them)
-	// arcData = backend.PreprocessArcFlags(graph, 7, 3)
+	// arcData = backend.PreprocessArcFlags(graph, 16, 3)
 	// backend.ArcFlagsToFile(arcData, arcFlagPath)
 
 	// IMPORT ARCFLAGS BY UNCOMMENTING BELOW:

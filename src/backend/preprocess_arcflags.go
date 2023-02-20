@@ -80,13 +80,13 @@ func CreatePartitions(graph Graph, numOfRows int, numOfPoleRowPartitions int) ([
 		//calc how many partitions per row
 		partitionsPerRow = append(partitionsPerRow, int(math.Ceil(float64(nodesPerRow[id])/(float64(nodesPerRow[0])/float64(numOfPoleRowPartitions)))))
 	}
-	fmt.Printf("Rough nodes per partition: %d\n---\n", nodesPerRow[0]/numOfPoleRowPartitions)
 
 	// calc column split of graph matrix rows
 	//same as nodematrix but values are IDs of partitions
 	numberOfPartitions := 0
 	nodePartitionMatrix := [][]int{}
 	partitionCounterStart := 0
+	maxPart := 0
 	for partRowID, partRow := range partitionRows {
 		numOfColumns := partitionsPerRow[partRowID]
 		//for every row in the original node matrix determine the cutoffs between the partition columns
@@ -94,7 +94,6 @@ func CreatePartitions(graph Graph, numOfRows int, numOfPoleRowPartitions int) ([
 			nodePartitionMatrix = append(nodePartitionMatrix, []int{})
 			//nodes in row / columns rounded up
 			nodesInThisGraphRow := len(graph.NodeMatrix[graphRowID])
-			nodesPerColumn := int(math.Round(float64(nodesInThisGraphRow) / float64(numOfColumns)))
 			//start id of this clumn
 			startID := 0
 			//end id of this column (element of this id not included)
@@ -102,30 +101,39 @@ func CreatePartitions(graph Graph, numOfRows int, numOfPoleRowPartitions int) ([
 			//current column we are adding
 			colCtr := 0
 			for colCtr < numOfColumns {
-				cutOffID = (colCtr + 1) * nodesPerColumn
-				startID = colCtr * nodesPerColumn
+				cutOffID = int(math.Round(float64((colCtr+1.0)*nodesInThisGraphRow) / float64(numOfColumns)))
+				startID = int(math.Round(float64(colCtr*nodesInThisGraphRow) / float64(numOfColumns)))
 				// 3 columns for 10 nodes should go -> 4, 4, 2
 				for i := startID; i < cutOffID && i < nodesInThisGraphRow; i++ {
 					//only add partition of node if node exists
 					nodePartitionMatrix[graphRowID] = append(nodePartitionMatrix[graphRowID], partitionCounterStart+colCtr)
-					numberOfPartitions = partitionCounterStart + colCtr + 1
+					if partitionCounterStart+colCtr > maxPart {
+						maxPart = partitionCounterStart + colCtr
+					}
 				}
-
 				colCtr++
 				//determine each cut off
 			}
 			//fill rows if necessary (e.g. if round down for nodespercolumn)
 			for len(nodePartitionMatrix[graphRowID]) < len(graph.NodeMatrix[graphRowID]) {
 				nodePartitionMatrix[graphRowID] = append(nodePartitionMatrix[graphRowID], partitionCounterStart+colCtr-1)
-				numberOfPartitions = partitionCounterStart + colCtr - 1 + 1
+				if partitionCounterStart+colCtr-1 > maxPart {
+					maxPart = partitionCounterStart + colCtr - 1
+				}
 			}
+			numberOfPartitions = partitionCounterStart + colCtr
 		}
 		partitionCounterStart += numOfColumns
 	}
 	// DIVIDE PARTITION ROWS INTO PARTITIONS
 
+	fmt.Printf("Rough nodes per partition: %d\n---\n", nodesPerRow[numOfRows/2]/numOfPoleRowPartitions)
 	fmt.Printf("node matrix rows: %d\npartition matrix rows: %d\n", len(graph.NodeMatrix), len(nodePartitionMatrix))
 	fmt.Printf("number of partitions total: %d\n", numberOfPartitions)
+	fmt.Printf("rough height of partitions: %d\n", rowCount/numOfRows)
+	numOfMiddleColumns := nodePartitionMatrix[len(nodePartitionMatrix)/2][len(nodePartitionMatrix[len(nodePartitionMatrix)/2])-1] - nodePartitionMatrix[len(nodePartitionMatrix)/2][0]
+
+	fmt.Printf("rough width of partitions: %d\n", (nodesPerRow[numOfRows/2]/numOfMiddleColumns)/(rowCount/numOfRows))
 	return nodePartitionMatrix, numberOfPartitions
 }
 

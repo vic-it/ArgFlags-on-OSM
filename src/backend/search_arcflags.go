@@ -70,6 +70,9 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 		path = append(path, prev[currentNode])
 		currentNode = prev[currentNode]
 	}
+	if dist[destID] >= 500000000 {
+		dist[destID] = -1
+	}
 	//if distance is "-1" -> no path found,
 	searchTimeDiff := time.Since(searchTime).Seconds()
 	return dist[destID], path, initTimeDiff, searchTimeDiff, nodesPoppedCounter

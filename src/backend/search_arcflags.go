@@ -7,22 +7,18 @@ import (
 
 func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData ArcData, nodePartitionList []int) (int, []int, float64, float64, int) {
 	initTime := time.Now()
-
 	numOfNodes := len(graph.Nodes)
 	visited := make([]bool, numOfNodes)
 	dist := make([]int, numOfNodes)
 	prev := make([]int, numOfNodes)
+	copy(prev, PrevCopy)
+	copy(dist, DistCopy)
 	destPartition := nodePartitionList[destID]
 	nodesPoppedCounter := 0
 
 	//priority queue datastructure (see priority_queue.go)
 	prioQ := &PriorityQueue{{priority: 0, value: sourceID}}
 
-	//simply iterating over every single node
-	for nodeID := range graph.Nodes {
-		dist[nodeID] = 500000000
-		prev[nodeID] = -1
-	}
 	dist[sourceID] = 0
 	initTimeDiff := time.Since(initTime).Seconds()
 	searchTime := time.Now()

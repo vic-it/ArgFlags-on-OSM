@@ -20,7 +20,6 @@ func main() {
 	// either creates a new graph entirely (can take some time) or imports a preprocessed graph (very fast)
 	initialize()
 	// starts server and web interface -> reachable at localhost:8080
-	testStuff()
 	startServer()
 }
 
@@ -184,8 +183,5 @@ func initialize() {
 	arcData = backend.FileToArcFlags(arcFlagPath)
 	// this speeds up arc flag since it doesnt have to calculate row/col of nodepartitionmatrix anymore
 	preparePartitionList()
-}
-
-func testStuff() {
-	//backend.PrintPointsToGEOJSON2(graph, arcData.NodePartitionMatrix)
+	backend.PrepArrays(len(graph.Nodes))
 }

@@ -6,7 +6,7 @@ var path1 = null
 var path2 = null
 var path3 = null
 var paths = []
-var estTimePerTest = 0.2
+var estTimePerTest = 0.12
 var slider = document.getElementById("numOfTests");
 var output = document.getElementById("numDisplay");
 var queryIntervall

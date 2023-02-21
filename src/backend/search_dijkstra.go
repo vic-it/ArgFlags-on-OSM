@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+var DistCopy []int
+var PrevCopy []int
+
 // calculates the shortest path between two nodes (on a graph) via dijkstras algorithm
 func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float64, float64, int) {
 	initTime := time.Now()
@@ -12,15 +15,11 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 	visited := make([]bool, numOfNodes)
 	dist := make([]int, numOfNodes)
 	prev := make([]int, numOfNodes)
+	copy(prev, PrevCopy)
+	copy(dist, DistCopy)
 	nodesPoppedCounter := 0
 	//priority queue datastructure (see priority_queue.go)
 	prioQ := &PriorityQueue{{priority: 0, value: sourceID}}
-
-	//simply iterating over every single node
-	for nodeID := range graph.Nodes {
-		dist[nodeID] = 500000000
-		prev[nodeID] = -1
-	}
 
 	dist[sourceID] = 0
 	initTimeDiff := time.Since(initTime).Seconds()
@@ -72,4 +71,12 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 	//if distance is "-1" -> no path found,
 	searchTimeDiff := time.Since(searchTime).Seconds()
 	return dist[destID], path, initTimeDiff, searchTimeDiff, nodesPoppedCounter
+}
+
+func PrepArrays(n int) {
+
+	for i := 0; i < n; i++ {
+		DistCopy = append(DistCopy, 500000000)
+		PrevCopy = append(PrevCopy, -1)
+	}
 }

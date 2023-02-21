@@ -17,7 +17,7 @@ var runningActiveTests bool
 
 func main() {
 	fmt.Printf("Starting")
-	// either creates a new graph entirely (can take some time) or imports a preprocessed graph (very fast)
+	// imports and initializes everything needed
 	initialize()
 	// starts server and web interface -> reachable at localhost:8080
 	startServer()
@@ -34,9 +34,9 @@ func startServer() {
 	println("GUI available on: localhost:8080")
 	println("READY!\n-----------")
 	http.ListenAndServe(":8080", nil)
-
 }
 
+// allows to abort running mass tests
 func getAbortHandler() http.HandlerFunc {
 	abortHandler := func(writer http.ResponseWriter, request *http.Request) {
 		if runningActiveTests {
@@ -46,6 +46,8 @@ func getAbortHandler() http.HandlerFunc {
 	}
 	return abortHandler
 }
+
+// starts running mass tests from web interface
 func getTestHandler() http.HandlerFunc {
 	testHandler := func(writer http.ResponseWriter, request *http.Request) {
 		if !runningActiveTests {
@@ -59,6 +61,7 @@ func getTestHandler() http.HandlerFunc {
 	return testHandler
 }
 
+// gets the progress for the mass tests
 func getProgressHandler() http.HandlerFunc {
 	progressHandler := func(writer http.ResponseWriter, request *http.Request) {
 
@@ -146,14 +149,14 @@ func preparePartitionList() {
 	}
 }
 
-// initializes a graph either by importing it from a file or by creating one (creating can take a long time)
+// initializes the graph and the arc flags and everything inbetween needed to run the program
 func initialize() {
-	// relevant paths
+	// relevant file paths
 	graphPath := "../../data/graph.graph"
 	arcFlagPath := "../../data/arc.flags"
 	antarctica := "../../data/antarctica.osm.pbf"
 	global := "../../data/global.sec"
-	// prints "..." so we dont have to comment/uncomment all paths because go is weird like that
+	// prints "..." so I dont have to comment/uncomment all paths because go is weird like that
 	fmt.Printf("%s%s%s%s\n", antarctica[0:1], global[0:1], graphPath[0:1], arcFlagPath[0:1])
 
 	// CREATE NEW GRAPH BY UNCOMMENTING BELOW:
@@ -173,9 +176,10 @@ func initialize() {
 	// backend.PrintEdgesToGEOJSON(graph)
 	//-----------------------------------------------------
 
-	//arcFlagStuff
+	// arcFlag Stuff
 	// GENERATE NEW ARCFLAGS BY UNCOMMENTING BELOW
 	// 7 - 3 generates roughly square partitions (64 of them)
+	// 16 - 3 generates roughly square partitions (313 of them)
 	// arcData = backend.PreprocessArcFlags(graph, 16, 3)
 	// backend.ArcFlagsToFile(arcData, arcFlagPath)
 
@@ -184,6 +188,8 @@ func initialize() {
 
 	// this speeds up arc flag since it doesnt have to calculate row/col of nodepartitionmatrix anymore
 	preparePartitionList()
+	// prepares the copy arrays
 	backend.PrepArrays(len(graph.Nodes))
+	// transpose arc flags for faster read access
 	arcData.ArcFlags = backend.TransposeMatrix(arcData.ArcFlags)
 }

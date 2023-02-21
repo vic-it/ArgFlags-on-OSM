@@ -371,23 +371,6 @@ func edgeIntersectionOfCoordinatesIntoIDs(l1 []EdgeCoordinate, l2 []EdgeCoordina
 	return c
 }
 
-// takes two lists of edge ID's and gives back the intersection
-func edgeIntersectionOfIDs(l1 []int, l2 []int) []int {
-	m := make(map[int]bool)
-	var c []int
-
-	for _, item := range l1 {
-		m[item] = true
-	}
-
-	for _, item := range l2 {
-		if _, ok := m[item]; ok {
-			c = append(c, item)
-		}
-	}
-	return c
-}
-
 // returns an array of integers which are the IDs of the edges of the 2nd list, which dont appear in the first list
 func secondListMinusFirstList(l1 []EdgeCoordinate, l2 []EdgeCoordinate) []int {
 	m := make(map[int]bool)
@@ -438,6 +421,7 @@ func getReverseEdgeID(graph Graph, edgeID int) int {
 }
 
 func TransposeMatrix(slice [][]bool) [][]bool {
+	println("Transposing Arc-Flags...")
 	xl := len(slice[0])
 	yl := len(slice)
 	result := make([][]bool, xl)

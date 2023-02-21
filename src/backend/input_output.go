@@ -361,10 +361,8 @@ func GetCoastline(path string) Coastline {
 	//higher -> possibly better performance -> diminishing returns at some point?
 	latGranularity := 360
 
-	var placeholder [][]EdgeCoordinate
 	for i := 0; i < latGranularity; i++ {
 		maxEdgeWidths = append(maxEdgeWidths, 0)
-		placeholder = append(placeholder, []EdgeCoordinate{})
 	}
 
 	f, err := os.Open(path)
@@ -456,19 +454,4 @@ func GetCoastline(path string) Coastline {
 
 	coastline := Coastline{Nodes: nodes, Edges: edges, SortedLonEdgeList: sortedLonList, MaxLonDiffs: maxEdgeWidths, maxLonDiff: maxEdgeWidth}
 	return coastline
-}
-
-func checkMaxLon(maxLonDiffList []float64, lonDiff float64, lat1 float64, lat2 float64) {
-	n := len(maxLonDiffList)
-
-	index1 := GetLonDiffIndex(n, lat1)
-
-	index2 := GetLonDiffIndex(n, lat2)
-
-	maxLonDiffList[index1] = math.Max(maxLonDiffList[index1], lonDiff)
-	maxLonDiffList[index2] = math.Max(maxLonDiffList[index2], lonDiff)
-}
-
-func GetLonDiffIndex(n int, lat float64) int {
-	return int(math.Round((lat + 90) * (float64(n) / 180)))
 }

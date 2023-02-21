@@ -15,9 +15,12 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 	visited := make([]bool, numOfNodes)
 	dist := make([]int, numOfNodes)
 	prev := make([]int, numOfNodes)
+
+	// copies pre-filled lists to save time
 	copy(prev, PrevCopy)
 	copy(dist, DistCopy)
 	nodesPoppedCounter := 0
+
 	//priority queue datastructure (see priority_queue.go)
 	prioQ := &PriorityQueue{{priority: 0, value: sourceID}}
 
@@ -28,15 +31,16 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 		//gets "best" next node
 		node := heap.Pop(prioQ).(*Item)
 		currentNodeID := node.value
+		// skip previously popped nodes (because we dont update PQ, we re-push)
 		if visited[currentNodeID] {
 			continue
 		}
+		// if we are at the destination we break!
 		if currentNodeID == destID {
 			break
 		}
 		visited[currentNodeID] = true
 		nodesPoppedCounter++
-		// if we are at the destination then we break!
 
 		// gets all neighbor/connected nodes
 		startIndex := graph.Offsets[currentNodeID]
@@ -44,6 +48,7 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 
 		for i := startIndex; i < endIndex; i++ {
 			neighbor := graph.Targets[i]
+			// skip nodes we already popped
 			if visited[neighbor] {
 				continue
 			}
@@ -74,8 +79,8 @@ func CalculateDijkstra(graph Graph, sourceID int, destID int) (int, []int, float
 }
 
 func PrepArrays(n int) {
-
 	for i := 0; i < n; i++ {
+		// prepare these values beforehand because copying them to a new slice is more efficient than preparing them for each run
 		DistCopy = append(DistCopy, 500000000)
 		PrevCopy = append(PrevCopy, -1)
 	}

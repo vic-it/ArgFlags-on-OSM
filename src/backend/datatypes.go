@@ -6,29 +6,10 @@ type EdgeCoordinate struct {
 }
 
 type Basic struct {
-	Nodes map[int64]node
 	//the ID of a way in this map is the ID of its first node -> for merge function
 	ways map[int64]way
 }
 
-type tag struct {
-	key   string
-	value string
-}
-
-type node struct {
-	//lat and lon are in degrees, not absolute position
-	lat float64
-	lon float64
-}
-type polygon struct {
-	sortedEdges []EdgeCoordinate
-	top         float64
-	left        float64
-	bottom      float64
-	right       float64
-	maxLonDiff  float64
-}
 type way struct {
 	nodes      []int64
 	lastNodeID int64
@@ -73,7 +54,4 @@ type ArcFlagInfo struct {
 	PartitionMatrix         [][]int
 	NumberOfTotalPartitions int
 	NodePartitions          map[int64][]int64
-}
-type Partition struct {
-	nodeMatrix [][]int
 }

@@ -11,6 +11,8 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 	visited := make([]bool, numOfNodes)
 	dist := make([]int, numOfNodes)
 	prev := make([]int, numOfNodes)
+
+	// copies pre-filled lists to save time
 	copy(prev, PrevCopy)
 	copy(dist, DistCopy)
 	destPartition := nodePartitionList[destID]
@@ -26,11 +28,11 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 		//gets "best" next node
 		node := heap.Pop(prioQ).(*Item)
 		currentNodeID := node.value
-		//ignore already popped nodes
+		// skip previously popped nodes (because we dont update PQ, we re-push)
 		if visited[currentNodeID] {
 			continue
 		}
-		// if we are at the destination then we break!
+		// if we are at the destination we break!
 		if currentNodeID == destID {
 			break
 		}
@@ -44,9 +46,11 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 
 		for i := startIndex; i < endIndex; i++ {
 			neighbor := graph.Targets[i]
+			// skip nodes we already popped
 			if visited[neighbor] {
 				continue
 			}
+			// only look at edges which go to the target partition, while in target partition every edge is "good"
 			if arcData.ArcFlags[destPartition][i] || destPartition == currentNodePartition {
 				alt := dist[currentNodeID] + graph.Weights[i]
 				if alt < dist[neighbor] {

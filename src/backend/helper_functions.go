@@ -420,6 +420,7 @@ func getReverseEdgeID(graph Graph, edgeID int) int {
 	return -1
 }
 
+// source: https://www.tutorialspoint.com/golang-program-to-find-the-transpose
 func TransposeMatrix(slice [][]bool) [][]bool {
 	println("Transposing Arc-Flags...")
 	xl := len(slice[0])

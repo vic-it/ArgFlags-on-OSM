@@ -103,7 +103,7 @@ func GraphToFile(graph Graph, path string) {
 	w.WriteString("z")
 	w.Flush()
 
-	fmt.Printf("Time to write graph to file: %.3fs\n", time.Since(startTime).Seconds())
+	fmt.Printf("Time to write graph to file: %.1fs\n", time.Since(startTime).Seconds())
 }
 
 // imports a graph from a .graph file
@@ -177,7 +177,7 @@ func FileToGraph(path string) Graph {
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Time to read graph from file: %.3fs\n", time.Since(startTime).Seconds())
+	fmt.Printf("Time to read graph from file: %.1fs\n", time.Since(startTime).Seconds())
 	return graph
 }
 
@@ -202,7 +202,7 @@ func ArcFlagsToFile(arcData ArcData, path string) {
 
 	//WRITE HERE
 
-	w.WriteString(fmt.Sprintf("%d\n", arcData.numberOfPartitions))
+	w.WriteString(fmt.Sprintf("%d\n", arcData.NumberOfPartitions))
 	w.WriteString("x\n")
 
 	//WRITE NODE PARTITION MATRIX
@@ -234,7 +234,7 @@ func ArcFlagsToFile(arcData ArcData, path string) {
 	w.WriteString("z")
 	w.Flush()
 
-	fmt.Printf("Time to write arc flags to file: %.3fs\n", time.Since(startTime).Seconds())
+	fmt.Printf("Time to write arc flags to file: %.1fs\n", time.Since(startTime).Seconds())
 }
 
 // imports a graph from a .graph file
@@ -256,8 +256,8 @@ func FileToArcFlags(path string) ArcData {
 		} else {
 			switch ctr {
 			case 0: //READ NUM OF NODES/EDGES
-				arcData.numberOfPartitions, _ = strconv.Atoi(line)
-				fmt.Printf("Importing arc flag data with: %d partitions...\n", arcData.numberOfPartitions)
+				arcData.NumberOfPartitions, _ = strconv.Atoi(line)
+				fmt.Printf("Importing arc flag data with: %d partitions...\n", arcData.NumberOfPartitions)
 			case 1: // partitionOfNode1, partitionOfNode2,...
 				list := strings.Split(line, ",")
 				row := []int{}
@@ -282,7 +282,7 @@ func FileToArcFlags(path string) ArcData {
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Time to read arc flag data from file: %.3fs\n", time.Since(startTime).Seconds())
+	fmt.Printf("Time to read arc flag data from file: %.1fs\n", time.Since(startTime).Seconds())
 	return arcData
 }
 
@@ -323,7 +323,7 @@ func PrintPointsToGEOJSON2(graph Graph, nodePartitionMatrix [][]int) {
 		panic(err)
 	}
 	rawJSON = nil
-	fmt.Printf("Time to read in coast lines: %.3fs\n", time.Since(startTime).Seconds())
+	fmt.Printf("Time to read in coast lines: %.1fs\n", time.Since(startTime).Seconds())
 }
 
 func PrintEdgesToGEOJSON(graph Graph) {
@@ -433,7 +433,7 @@ func GetCoastline(path string) Coastline {
 		}
 	}
 
-	fmt.Printf("Time to read in coast lines: %.3fs\n", time.Since(startTime).Seconds())
+	fmt.Printf("Time to read in coast lines: %.1fs\n", time.Since(startTime).Seconds())
 	f.Close()
 	runtime.GC()
 	startTime = time.Now()

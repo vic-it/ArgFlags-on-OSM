@@ -47,7 +47,7 @@ func CalculateArcFlagDijkstra(graph Graph, sourceID int, destID int, arcData Arc
 			if visited[neighbor] {
 				continue
 			}
-			if arcData.ArcFlags[i][destPartition] || destPartition == currentNodePartition {
+			if arcData.ArcFlags[destPartition][i] || destPartition == currentNodePartition {
 				alt := dist[currentNodeID] + graph.Weights[i]
 				if alt < dist[neighbor] {
 					dist[neighbor] = alt

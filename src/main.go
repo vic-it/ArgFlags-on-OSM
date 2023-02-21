@@ -181,7 +181,9 @@ func initialize() {
 
 	// IMPORT ARCFLAGS BY UNCOMMENTING BELOW:
 	arcData = backend.FileToArcFlags(arcFlagPath)
+
 	// this speeds up arc flag since it doesnt have to calculate row/col of nodepartitionmatrix anymore
 	preparePartitionList()
 	backend.PrepArrays(len(graph.Nodes))
+	arcData.ArcFlags = backend.TransposeMatrix(arcData.ArcFlags)
 }

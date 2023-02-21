@@ -436,3 +436,18 @@ func getReverseEdgeID(graph Graph, edgeID int) int {
 	println("huh")
 	return -1
 }
+
+func TransposeMatrix(slice [][]bool) [][]bool {
+	xl := len(slice[0])
+	yl := len(slice)
+	result := make([][]bool, xl)
+	for i := range result {
+		result[i] = make([]bool, yl)
+	}
+	for i := 0; i < xl; i++ {
+		for j := 0; j < yl; j++ {
+			result[i][j] = slice[j][i]
+		}
+	}
+	return result
+}

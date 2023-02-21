@@ -83,11 +83,11 @@ func testDijkstra(graph Graph, n int, paths [][]int) {
 	}
 	//TEST: 1000 runs with average initialization time of: xxx and average search time of: xxx and longest total search of: xxx
 	//print results
-	stats := fmt.Sprintf("Total test time for %d routes: %.1fs (avg: %.1fms)\n", n, time.Since(totalTime).Seconds(), 1000*time.Since(totalTime).Seconds()/float64(n))
-	stats += fmt.Sprintf("Average initialization time: %.1fms (max: %.1fms)\n", 1000*totalInitTime/float64(n), 1000*maxInitTime)
-	stats += fmt.Sprintf("Average search time: %.1fms (max: %.1fms)\n", 1000*totalSearchTime/float64(n), 1000*maxSearchTime)
+	stats := fmt.Sprintf("Total test time for %d routes: %.1f s (avg: %.1f ms)\n", n, time.Since(totalTime).Seconds(), 1000*time.Since(totalTime).Seconds()/float64(n))
+	stats += fmt.Sprintf("Average initialization time: %.1f ms (max: %.1f ms)\n", 1000*totalInitTime/float64(n), 1000*maxInitTime)
+	stats += fmt.Sprintf("Average search time: %.1f ms (max: %.1f ms)\n", 1000*totalSearchTime/float64(n), 1000*maxSearchTime)
 	stats += fmt.Sprintf("Average heap pops: %d pops (max: %d pops)\n", totalNodesPopped/n, maxNodesPopped)
-	stats += fmt.Sprintf("Average distance: %dkm (max: %dkm)\n", totalDistance/(n-fails), maxDistance)
+	stats += fmt.Sprintf("Average distance: %d km (max: %d km)\n", totalDistance/(n-fails), maxDistance)
 	//stats += fmt.Sprintf("Average path length: %d nodes (max: %d nodes)\n", totalPathLength/(n-fails), maxPathLength)
 	stats += fmt.Sprintf("Number of routes with no viable path: %d\n", fails)
 	println("-------")
@@ -149,11 +149,11 @@ func testArcFlagDijkstra(graph Graph, n int, paths [][]int, arcData ArcData, nod
 	}
 	//TEST: 1000 runs with average initialization time of: xxx and average search time of: xxx and longest total search of: xxx
 	//print results
-	stats := fmt.Sprintf("Total test time for %d routes: %.1fs (avg: %.1fms)\n", n, time.Since(totalTime).Seconds(), 1000*time.Since(totalTime).Seconds()/float64(n))
-	stats += fmt.Sprintf("Average initialization time: %.1fms (max: %.1fms)\n", 1000*totalInitTime/float64(n), 1000*maxInitTime)
-	stats += fmt.Sprintf("Average search time: %.1fms (max: %.1fms)\n", 1000*totalSearchTime/float64(n), 1000*maxSearchTime)
+	stats := fmt.Sprintf("Total test time for %d routes: %.1f s (avg: %.1f ms)\n", n, time.Since(totalTime).Seconds(), 1000*time.Since(totalTime).Seconds()/float64(n))
+	stats += fmt.Sprintf("Average initialization time: %.1f ms (max: %.1f ms)\n", 1000*totalInitTime/float64(n), 1000*maxInitTime)
+	stats += fmt.Sprintf("Average search time: %.1f ms (max: %.1f ms)\n", 1000*totalSearchTime/float64(n), 1000*maxSearchTime)
 	stats += fmt.Sprintf("Average heap pops: %d pops (max: %d pops)\n", totalNodesPopped/n, maxNodesPopped)
-	stats += fmt.Sprintf("Average distance: %dkm (max: %dkm)\n", totalDistance/(n-fails), maxDistance)
+	stats += fmt.Sprintf("Average distance: %d km (max: %d km)\n", totalDistance/(n-fails), maxDistance)
 	//stats += fmt.Sprintf("Average path length: %d nodes (max: %d nodes)\n", totalPathLength/(n-fails), maxPathLength)
 	stats += fmt.Sprintf("Number of routes with no viable path: %d\n", fails)
 	println("-------")

@@ -1,3 +1,8 @@
+This is a programming project for a university course. The goal was to implement a much faster, more sophisticated alternative to the common dijkstra/A* approaches for shortest path computations on a graph.
+The Arc-Flag approach provided in this project allows for a 20 to 100 times faster computation of the shortest path in a roughly 1,000,000 node graph.
+The backend was mainly written in GO while the GUI was made in leaflet and javascript.
+
+How to use:
 1.  Export this ZIP file to any directory but keep the following structure within the project:	 
 	|
 	|- /OSM
